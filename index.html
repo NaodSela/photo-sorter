@@ -89,6 +89,2269 @@
         <button class="chip" data-v="year">שנה</button>
         <button class="chip" data-v="month">חודש</button>
         <button class="chip sel" data-v="day">יום</button>
+        <button class="chip" data-v="ym">שנה ← חודש</button>
+        <button class="chip" data-v="ymd">שנה ← חודש ← יום</button>
+      </div>
+      <div class="hint" id="date-hint"></div>
+    </div>
+
+    <div class="group" id="grp-place">
+      <div class="glabel">רמת המיקום</div>
+      <div class="chips" id="g-placeLevel">
+        <button class="chip sel" data-v="city">עיר / יישוב</button>
+        <button class="chip" data-v="street">רחוב / שכונה</button>
+      </div>
+      <div class="hint">זיהוי שמות מקומות דורש אינטרנט. בלי אינטרנט ייווצרו תיקיות לפי קואורדינטות.</div>
+    </div>
+
+    <div class="group">
+      <div class="glabel">מה לעשות</div>
+      <div class="chips col" id="g-destination">
+        <button class="chip sel" data-v="newfolder">ליצור תיקייה חדשה מסודרת<small>המקור נשאר שלם. הכי בטוח.</small></button>
+        <button class="chip" data-v="inplace">לסדר את התיקייה הזאת במקום<small>הקבצים עוברים לתוך תיקיות משנה.</small></button>
+        <button class="chip" data-v="drive">להעלות מסודר לגוגל דרייב<small id="drive-note">המקור נשאר בטלפון.</small></button>
+        <button class="chip" data-v="zip">להוריד קובץ ZIP מסודר<small>התיקיות בתוך הקובץ. עובד בכל מכשיר, ונוח לשליחה למישהו אחר.</small></button>
+      </div>
+    </div>
+
+    <div class="group">
+      <label class="tog"><input type="checkbox" id="opt-recurse"> לכלול גם תת‑תיקיות קיימות</label>
+    </div>
+
+    <div class="row">
+      <button id="back1" class="ghost">חזרה</button>
+      <button id="go-preview" class="primary">המשך</button>
+    </div>
+  </div>
+
+  <!-- ========== 3. תצוגה מקדימה ========== -->
+  <div class="screen" id="s-preview">
+    <h2>ככה זה ייראה</h2>
+    <div id="warn" class="warn"></div>
+    <div id="tree" class="tree"></div>
+    <div class="row">
+      <button id="back2" class="ghost">חזרה</button>
+      <button id="run" class="primary">בצע</button>
+    </div>
+  </div>
+
+  <!-- ========== 4. עובד ========== -->
+  <div class="screen" id="s-run">
+    <h2 id="run-title">מסדר…</h2>
+    <div class="barwrap"><div class="fill" id="fill"></div></div>
+    <div class="pct" id="pct">0%</div>
+    <div class="cur" id="cur"></div>
+    <button id="stop" class="ghost">עצור</button>
+  </div>
+
+  <!-- ========== 5. סיום ========== -->
+  <div class="screen" id="s-done">
+    <div class="hero"><div class="mark ok">✓</div><h1 id="done-h">הכל מסודר</h1></div>
+    <div id="summary" class="summary"></div>
+    <div id="done-actions"></div>
+    <button id="again" class="primary big">לסדר תיקייה נוספת</button>
+  </div>
+
+  <!-- ========== הגדרות ========== -->
+  <div class="modal" id="settings">
+    <div class="sheet">
+      <h2>חיבור לגוגל דרייב</h2>
+      <p class="sub">כדי להעלות לדרייב צריך מזהה OAuth משלך מ‑Google Cloud. הדבק אותו כאן פעם אחת.</p>
+      <input id="cid" type="text" inputmode="url" placeholder="123456789-abc.apps.googleusercontent.com" spellcheck="false">
+      <p class="fine">ב‑Google Cloud, תחת <b>Authorized JavaScript origins</b>, רשום בדיוק את השורה הזאת. זה השדה היחיד שצריך — אין כאן כתובת הפניה.</p>
+      <div class="uribox">
+        <div class="ulabel">Authorized JavaScript origins</div>
+        <code id="origin"></code>
+        <button class="copy" data-copy="origin">העתק</button>
+      </div>
+      <div id="frame-warn"></div>
+      <div class="row">
+        <button id="close-settings" class="ghost">סגור</button>
+        <button id="save-cid" class="primary">שמור</button>
+      </div>
+    </div>
+  </div>
+</section>
+
+<style>
+  *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+  html,body{margin:0;padding:0}
+  body{
+    background:#0e1116;color:#e8ecf2;
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;
+    font-size:17px;line-height:1.55;
+    padding:0 18px calc(28px + env(safe-area-inset-bottom));
+    max-width:640px;margin:0 auto;min-height:100vh;
+  }
+  .bar{display:flex;align-items:center;justify-content:space-between;
+    padding:14px 0 6px;position:sticky;top:0;background:#0e1116;z-index:5}
+  .brand{font-weight:700;letter-spacing:-.01em}
+  .screen{display:none;animation:in .18s ease-out}
+  .screen.on{display:block}
+  @keyframes in{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+
+  h1{font-size:26px;line-height:1.3;margin:0 0 10px;font-weight:700;letter-spacing:-.02em}
+  h2{font-size:20px;margin:18px 0 12px;font-weight:650}
+  .sub{color:#a3adbb;margin:0 0 4px}
+  .fine{color:#6f7a89;font-size:14px;margin:14px 0 0}
+  code{background:#1a1f27;padding:3px 6px;border-radius:6px;font-size:12px;
+    word-break:break-all;display:inline-block;direction:ltr}
+
+  .hero{text-align:center;padding:34px 0 26px}
+  .mark{font-size:52px;line-height:1;margin-bottom:18px}
+  .mark.ok{color:#4ade80;font-size:60px}
+
+  button{font:inherit;cursor:pointer;border:0;border-radius:14px;transition:.12s}
+  button:active{transform:scale(.985)}
+  .primary{background:#3b82f6;color:#fff;padding:15px 22px;font-weight:650;width:100%}
+  .primary:disabled{background:#2b3442;color:#697585}
+  .primary.big{padding:19px;font-size:19px;border-radius:16px}
+  .ghost{background:#1a1f27;color:#c3ccd8;padding:15px 22px;font-weight:600}
+  .row{display:flex;gap:10px;margin-top:24px}
+  .row .ghost{flex:0 0 34%}
+  .row .primary{flex:1}
+
+  .found{background:#151a21;border:1px solid #232a35;border-radius:14px;
+    padding:14px 16px;margin:14px 0 22px;font-size:15px}
+  .found b{color:#fff}
+
+  .group{margin-bottom:26px}
+  .glabel{font-size:14px;color:#8b95a4;margin-bottom:9px;font-weight:600}
+  .chips{display:flex;flex-wrap:wrap;gap:8px}
+  .chips.col{flex-direction:column}
+  .chip{background:#171c24;color:#c3ccd8;border:1.5px solid #262e3a;
+    padding:12px 15px;border-radius:13px;font-size:15px;font-weight:550;text-align:right}
+  .chips.col .chip{width:100%}
+  .chip small{display:block;color:#6f7a89;font-size:13px;font-weight:400;margin-top:3px}
+  .chip.sel{background:#12294a;border-color:#3b82f6;color:#dbeafe}
+  .chip.sel small{color:#9dbbe4}
+  .hint{color:#6f7a89;font-size:13.5px;margin-top:9px}
+
+  .tog{display:flex;align-items:center;gap:11px;padding:11px 0;color:#c3ccd8;font-size:15.5px}
+  .tog input{width:21px;height:21px;accent-color:#3b82f6;flex:none}
+  .tog b{color:#e8ecf2}
+  .kinds{display:flex;flex-wrap:wrap;gap:2px 20px}
+  .kinds .tog{padding:8px 0}
+  #terms{width:100%;background:#0e1116;border:1.5px solid #262e3a;color:#e8ecf2;
+    border-radius:12px;padding:13px 14px;font-size:16px}
+  #terms:focus{outline:none;border-color:#3b82f6}
+
+  .warn{margin-bottom:14px}
+  .warn div{background:#2a2213;border:1px solid #4a3a18;color:#f0d9a8;
+    padding:11px 14px;border-radius:11px;font-size:14.5px;margin-bottom:8px}
+  .warn div.bad{background:#2a1618;border-color:#4a1f24;color:#f3b8bd}
+
+  .tree{background:#151a21;border:1px solid #232a35;border-radius:14px;
+    padding:8px 4px;max-height:47vh;overflow:auto}
+  .tnode{display:flex;justify-content:space-between;gap:12px;
+    padding:8px 14px;font-size:15px;border-bottom:1px solid #1c222b}
+  .tnode:last-child{border-bottom:0}
+  .tnode .p{color:#e8ecf2;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .tnode .p i{color:#6f7a89;font-style:normal}
+  .tnode .c{color:#8b95a4;font-size:13.5px;flex:none}
+
+  .barwrap{background:#1a1f27;height:12px;border-radius:99px;overflow:hidden;margin:26px 0 12px}
+  .fill{background:#3b82f6;height:100%;width:0;transition:width .18s;border-radius:99px}
+  .pct{text-align:center;font-size:30px;font-weight:700;letter-spacing:-.02em}
+  .cur{text-align:center;color:#6f7a89;font-size:13.5px;margin:8px 0 30px;
+    min-height:20px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;direction:ltr}
+
+  .summary{background:#151a21;border:1px solid #232a35;border-radius:14px;
+    padding:16px;margin-bottom:24px;font-size:15px}
+  .summary b{color:#fff}
+  .summary ul{margin:10px 0 0;padding-inline-start:20px;color:#a3adbb}
+
+  .modal{display:none;position:fixed;inset:0;background:rgba(0,0,0,.66);z-index:50;
+    align-items:flex-end;justify-content:center}
+  .modal.on{display:flex}
+  .sheet{background:#141920;border-radius:20px 20px 0 0;padding:24px 20px calc(28px + env(safe-area-inset-bottom));
+    width:100%;max-width:640px;max-height:88vh;overflow:auto}
+  .sheet h2{margin-top:0}
+  .sheet input{width:100%;background:#0e1116;border:1.5px solid #262e3a;color:#e8ecf2;
+    border-radius:12px;padding:14px;font-size:15px;direction:ltr;margin-top:12px}
+  .uribox{background:#0e1116;border:1.5px solid #262e3a;border-radius:12px;
+    padding:11px 13px;margin-top:10px}
+  .ulabel{font-size:12px;color:#6f7a89;direction:ltr;text-align:left;
+    letter-spacing:.02em;margin-bottom:5px}
+  .uribox code{display:block;background:none;padding:0;font-size:12.5px;
+    color:#a5d6ff;word-break:break-all}
+  .copy{background:#1a1f27;color:#c3ccd8;border-radius:9px;padding:7px 14px;
+    font-size:13.5px;font-weight:600;margin-top:9px}
+  .fw{background:#2a1618;border:1px solid #4a1f24;color:#f3b8bd;
+    border-radius:11px;padding:11px 13px;font-size:14px;margin-top:12px}
+  .unframe{background:#3b82f6;color:#fff;border-radius:10px;padding:9px 16px;
+    font-size:14px;font-weight:650;margin-top:10px}
+  .wide{width:100%;margin-top:10px}
+  #install-note{margin-top:18px}
+  #done-actions{margin-bottom:22px}
+  .linkbox{background:#151a21;border:1px solid #232a35;border-radius:14px;
+    padding:14px 16px;margin-bottom:12px}
+  .linkbox .lb{font-size:13.5px;color:#8b95a4;margin-bottom:7px}
+  .linkbox a{color:#60a5fa;font-size:14px;word-break:break-all;direction:ltr;display:block}
+  .actrow{display:flex;gap:8px;flex-wrap:wrap;margin-top:11px}
+  .act{background:#1a1f27;color:#c3ccd8;border-radius:10px;padding:10px 15px;
+    font-size:14px;font-weight:600}
+  .act.go{background:#3b82f6;color:#fff}
+</style>
+
+<script>
+/* Pure-JS EXIF reader: JPEG (APP1) + HEIF/HEIC/AVIF (meta/iloc "Exif" item).
+   Extracts: date taken (as shot, no timezone math) + GPS lat/lon.
+   Designed for browser use with File.slice(), but every function works on plain buffers
+   so it can be unit-tested in Node. */
+
+(function (root) {
+  'use strict';
+
+  // ---------- little helpers ----------
+  function dvOf(buf) {
+    if (buf instanceof DataView) return buf;
+    if (buf instanceof ArrayBuffer) return new DataView(buf);
+    // Node Buffer / Uint8Array
+    return new DataView(buf.buffer, buf.byteOffset, buf.byteLength);
+  }
+
+  function uintAt(dv, off, size, le) {
+    if (size === 0) return 0;
+    if (size === 1) return dv.getUint8(off);
+    if (size === 2) return dv.getUint16(off, le);
+    if (size === 4) return dv.getUint32(off, le);
+    if (size === 8) {
+      // JS-safe read of 64-bit (photo files never exceed 2^53 bytes)
+      const hi = dv.getUint32(off, le ? false : true); // placeholder, replaced below
+      return Number(dv.getBigUint64(off, le));
+    }
+    throw new Error('bad uint size ' + size);
+  }
+
+  function ascii(dv, off, len) {
+    let s = '';
+    for (let i = 0; i < len; i++) {
+      const c = dv.getUint8(off + i);
+      if (c === 0) break;
+      s += String.fromCharCode(c);
+    }
+    return s;
+  }
+
+  // ---------- TIFF / EXIF IFD ----------
+  const TYPE_SIZE = { 1: 1, 2: 1, 3: 2, 4: 4, 5: 8, 6: 1, 7: 1, 8: 2, 9: 4, 10: 8, 11: 4, 12: 8 };
+
+  function readIFD(dv, tiffStart, ifdOff, le, wanted) {
+    // returns Map tag -> {type,count,dataOff}
+    const out = new Map();
+    if (ifdOff + 2 > dv.byteLength) return out;
+    const n = dv.getUint16(ifdOff, le);
+    if (n > 512) return out; // corrupt guard
+    for (let i = 0; i < n; i++) {
+      const e = ifdOff + 2 + i * 12;
+      if (e + 12 > dv.byteLength) break;
+      const tag = dv.getUint16(e, le);
+      if (wanted && !wanted.has(tag)) continue;
+      const type = dv.getUint16(e + 2, le);
+      const count = dv.getUint32(e + 4, le);
+      const sz = TYPE_SIZE[type];
+      if (!sz) continue;
+      const total = sz * count;
+      let dataOff;
+      if (total <= 4) dataOff = e + 8;
+      else dataOff = tiffStart + dv.getUint32(e + 8, le);
+      if (dataOff < 0 || dataOff + Math.min(total, 4) > dv.byteLength) continue;
+      out.set(tag, { type, count, dataOff, total });
+    }
+    return out;
+  }
+
+  function entryAscii(dv, ent) {
+    if (!ent) return null;
+    const len = Math.min(ent.count, dv.byteLength - ent.dataOff);
+    if (len <= 0) return null;
+    return ascii(dv, ent.dataOff, len).trim();
+  }
+
+  function entryRationals(dv, ent, le) {
+    if (!ent || ent.type !== 5) return null;
+    const out = [];
+    for (let i = 0; i < ent.count; i++) {
+      const o = ent.dataOff + i * 8;
+      if (o + 8 > dv.byteLength) return null;
+      const num = dv.getUint32(o, le);
+      const den = dv.getUint32(o + 4, le);
+      out.push(den === 0 ? 0 : num / den);
+    }
+    return out;
+  }
+
+  const T_EXIF_PTR = 0x8769, T_GPS_PTR = 0x8825, T_DATETIME = 0x0132;
+  const T_DTORIG = 0x9003, T_DTDIGI = 0x9004;
+  const G_LATREF = 1, G_LAT = 2, G_LONREF = 3, G_LON = 4, G_DATESTAMP = 0x001d;
+
+  /* Parse a TIFF header at tiffStart. Returns {date, lat, lon} (any may be null). */
+  function parseTiff(dv, tiffStart) {
+    if (tiffStart + 8 > dv.byteLength) return null;
+    const b0 = dv.getUint8(tiffStart), b1 = dv.getUint8(tiffStart + 1);
+    let le;
+    if (b0 === 0x49 && b1 === 0x49) le = true;
+    else if (b0 === 0x4d && b1 === 0x4d) le = false;
+    else return null;
+    if (dv.getUint16(tiffStart + 2, le) !== 0x002a) return null;
+    const ifd0Off = tiffStart + dv.getUint32(tiffStart + 4, le);
+
+    const ifd0 = readIFD(dv, tiffStart, ifd0Off, le, new Set([T_EXIF_PTR, T_GPS_PTR, T_DATETIME]));
+    const res = { date: null, lat: null, lon: null };
+
+    // --- date ---
+    let dateStr = null;
+    const exifPtr = ifd0.get(T_EXIF_PTR);
+    if (exifPtr) {
+      const sub = tiffStart + dv.getUint32(exifPtr.dataOff, le);
+      const ex = readIFD(dv, tiffStart, sub, le, new Set([T_DTORIG, T_DTDIGI]));
+      dateStr = entryAscii(dv, ex.get(T_DTORIG)) || entryAscii(dv, ex.get(T_DTDIGI));
+    }
+    if (!dateStr) dateStr = entryAscii(dv, ifd0.get(T_DATETIME));
+    res.date = parseExifDate(dateStr);
+
+    // --- gps ---
+    const gpsPtr = ifd0.get(T_GPS_PTR);
+    if (gpsPtr) {
+      const gOff = tiffStart + dv.getUint32(gpsPtr.dataOff, le);
+      const g = readIFD(dv, tiffStart, gOff, le, new Set([G_LATREF, G_LAT, G_LONREF, G_LON]));
+      const lat = dms(entryRationals(dv, g.get(G_LAT), le), entryAscii(dv, g.get(G_LATREF)), 'S');
+      const lon = dms(entryRationals(dv, g.get(G_LON), le), entryAscii(dv, g.get(G_LONREF)), 'W');
+      if (lat !== null && lon !== null && !(lat === 0 && lon === 0)) { res.lat = lat; res.lon = lon; }
+    }
+    return res;
+  }
+
+  function dms(arr, ref, negRef) {
+    if (!arr || arr.length < 2) return null;
+    let v = arr[0] + (arr[1] || 0) / 60 + (arr[2] || 0) / 3600;
+    if (!isFinite(v)) return null;
+    if (ref && ref.toUpperCase().charAt(0) === negRef) v = -v;
+    if (Math.abs(v) > 180) return null;
+    return v;
+  }
+
+  /* "2026:08:11 14:30:52" -> {y,m,d,hh,mm,ss}. Kept as literal wall-clock: the
+     time the shutter fired, in whatever timezone the camera was in. No Date(), no shifting. */
+  function parseExifDate(s) {
+    if (!s) return null;
+    const m = String(s).match(/^(\d{4})[:\-](\d{2})[:\-](\d{2})[ T](\d{2}):(\d{2}):(\d{2})/);
+    if (!m) return null;
+    const y = +m[1], mo = +m[2], d = +m[3];
+    if (y < 1900 || y > 2200 || mo < 1 || mo > 12 || d < 1 || d > 31) return null;
+    return { y, m: mo, d, hh: +m[4], mm: +m[5], ss: +m[6] };
+  }
+
+  // ---------- JPEG ----------
+  function findJpegTiff(dv) {
+    if (dv.byteLength < 4) return -1;
+    if (dv.getUint16(0, false) !== 0xffd8) return -1;
+    let off = 2;
+    while (off + 4 <= dv.byteLength) {
+      if (dv.getUint8(off) !== 0xff) { off++; continue; }
+      const marker = dv.getUint8(off + 1);
+      if (marker === 0xd8 || marker === 0x01 || (marker >= 0xd0 && marker <= 0xd7)) { off += 2; continue; }
+      if (marker === 0xda || marker === 0xd9) return -1; // scan data: no EXIF beyond
+      const len = dv.getUint16(off + 2, false);
+      if (len < 2) return -1;
+      if (marker === 0xe1 && off + 4 + 6 <= dv.byteLength) {
+        if (ascii(dv, off + 4, 4) === 'Exif') return off + 10; // "Exif\0\0" then TIFF
+      }
+      off += 2 + len;
+    }
+    return -1;
+  }
+
+  // ---------- HEIF / HEIC / AVIF ----------
+  /* Walks top-level boxes -> meta -> {iinf, iloc} and returns the byte range of the
+     "Exif" item, or null. Only needs the head of the file (meta sits near the front). */
+  function heifExifRange(dv) {
+    const metaBox = findBox(dv, 0, dv.byteLength, 'meta');
+    if (!metaBox) return null;
+    // meta is a FullBox: 4 bytes version+flags before children
+    const mStart = metaBox.body + 4, mEnd = metaBox.end;
+    const iinf = findBox(dv, mStart, mEnd, 'iinf');
+    const iloc = findBox(dv, mStart, mEnd, 'iloc');
+    if (!iinf || !iloc) return null;
+
+    const exifId = findExifItemId(dv, iinf);
+    if (exifId === null) return null;
+    return locateItem(dv, iloc, exifId);
+  }
+
+  function findBox(dv, start, end, want) {
+    let off = start;
+    while (off + 8 <= end && off + 8 <= dv.byteLength) {
+      let size = dv.getUint32(off, false);
+      const type = ascii(dv, off + 4, 4);
+      let hdr = 8;
+      if (size === 1) {
+        if (off + 16 > dv.byteLength) return null;
+        size = Number(dv.getBigUint64(off + 8, false));
+        hdr = 16;
+      } else if (size === 0) {
+        size = end - off;
+      }
+      if (size < hdr) return null;
+      if (type === want) return { body: off + hdr, end: Math.min(off + size, end) };
+      off += size;
+    }
+    return null;
+  }
+
+  function findExifItemId(dv, iinf) {
+    let p = iinf.body;
+    const ver = dv.getUint8(p);
+    p += 4; // version + flags
+    let count;
+    if (ver === 0) { count = dv.getUint16(p, false); p += 2; }
+    else { count = dv.getUint32(p, false); p += 4; }
+    for (let i = 0; i < count && p + 8 <= iinf.end; i++) {
+      const bsz = dv.getUint32(p, false);
+      const btype = ascii(dv, p + 4, 4);
+      if (bsz < 8) return null;
+      if (btype === 'infe') {
+        const iv = dv.getUint8(p + 8);
+        let q = p + 12; // box hdr(8) + version/flags(4)
+        let itemId;
+        if (iv < 3) { itemId = dv.getUint16(q, false); q += 2; }
+        else { itemId = dv.getUint32(q, false); q += 4; }
+        q += 2; // protection index
+        if (iv >= 2) {
+          const itype = ascii(dv, q, 4);
+          if (itype === 'Exif') return itemId;
+        }
+      }
+      p += bsz;
+    }
+    return null;
+  }
+
+  function locateItem(dv, iloc, wantId) {
+    let p = iloc.body;
+    const ver = dv.getUint8(p);
+    p += 4;
+    const b1 = dv.getUint8(p), b2 = dv.getUint8(p + 1);
+    p += 2;
+    const offSize = b1 >> 4, lenSize = b1 & 15, baseSize = b2 >> 4, idxSize = b2 & 15;
+    let count;
+    if (ver < 2) { count = dv.getUint16(p, false); p += 2; }
+    else { count = dv.getUint32(p, false); p += 4; }
+    for (let i = 0; i < count; i++) {
+      let id;
+      if (ver < 2) { id = dv.getUint16(p, false); p += 2; }
+      else { id = dv.getUint32(p, false); p += 4; }
+      if (ver >= 1) p += 2; // reserved + construction_method
+      p += 2; // data_reference_index
+      const base = uintAt(dv, p, baseSize, false); p += baseSize;
+      const extents = dv.getUint16(p, false); p += 2;
+      for (let j = 0; j < extents; j++) {
+        if (ver >= 1 && idxSize > 0) p += idxSize;
+        const eOff = uintAt(dv, p, offSize, false); p += offSize;
+        const eLen = uintAt(dv, p, lenSize, false); p += lenSize;
+        if (id === wantId && j === 0) return { start: base + eOff, length: eLen };
+      }
+    }
+    return null;
+  }
+
+  /* Given the raw bytes of the Exif item, find the TIFF header inside. */
+  function tiffInExifItem(dv) {
+    if (dv.byteLength < 8) return -1;
+    const declared = dv.getUint32(0, false); // exif_tiff_header_offset
+    const cand = 4 + declared;
+    if (cand + 4 <= dv.byteLength && isTiffMagic(dv, cand)) return cand;
+    // fall back: scan a small window for "Exif\0\0" or a bare TIFF header
+    const lim = Math.min(dv.byteLength - 4, 4096);
+    for (let i = 0; i < lim; i++) {
+      if (dv.getUint8(i) === 0x45 && ascii(dv, i, 4) === 'Exif' &&
+          dv.getUint8(i + 4) === 0 && isTiffMagic(dv, i + 6)) return i + 6;
+      if (isTiffMagic(dv, i)) return i;
+    }
+    return -1;
+  }
+
+  function isTiffMagic(dv, off) {
+    if (off + 4 > dv.byteLength) return false;
+    const a = dv.getUint8(off), b = dv.getUint8(off + 1);
+    if (a === 0x49 && b === 0x49) return dv.getUint16(off + 2, true) === 0x002a;
+    if (a === 0x4d && b === 0x4d) return dv.getUint16(off + 2, false) === 0x002a;
+    return false;
+  }
+
+  function isHeifBrand(dv) {
+    if (dv.byteLength < 12) return false;
+    return ascii(dv, 4, 4) === 'ftyp';
+  }
+
+  // ---------- filename fallbacks ----------
+  /* Camera apps stamp the capture time into the filename. When EXIF is gone
+     (WhatsApp, screenshots, re-saves) this is far more trustworthy than mtime. */
+  function dateFromName(name) {
+    if (!name) return null;
+    const s = String(name);
+    let m;
+    // 20260811_143052 / IMG_20260811_143052 / PXL_20260811_143052123 / IMG-20260811-WA0001
+    m = s.match(/(?:^|[^\d])(20\d{2})(\d{2})(\d{2})[ _\-T]?(\d{2})?(\d{2})?(\d{2})?(?:[^\d]|$)/);
+    if (m) {
+      const o = mk(+m[1], +m[2], +m[3], +(m[4] || 0), +(m[5] || 0), +(m[6] || 0));
+      if (o) return o;
+    }
+    // 2026-08-11 14.30.52 / 2026_08_11
+    m = s.match(/(20\d{2})[\-_.](\d{2})[\-_.](\d{2})(?:[ _T](\d{2})[.:\-](\d{2})[.:\-](\d{2}))?/);
+    if (m) {
+      const o = mk(+m[1], +m[2], +m[3], +(m[4] || 0), +(m[5] || 0), +(m[6] || 0));
+      if (o) return o;
+    }
+    // unix millis, e.g. WhatsApp/Telegram exports: 1754913052123
+    m = s.match(/(?:^|[^\d])(1[0-9]{12})(?:[^\d]|$)/);
+    if (m) {
+      const d = new Date(+m[1]);
+      if (d.getFullYear() > 2001 && d.getFullYear() < 2100) return fromDate(d);
+    }
+    return null;
+  }
+
+  function mk(y, mo, d, hh, mm, ss) {
+    if (y < 2001 || y > 2100 || mo < 1 || mo > 12 || d < 1 || d > 31) return null;
+    if (hh > 23 || mm > 59 || ss > 59) { hh = 0; mm = 0; ss = 0; }
+    return { y, m: mo, d, hh, mm, ss };
+  }
+
+  function fromDate(d) {
+    return { y: d.getFullYear(), m: d.getMonth() + 1, d: d.getDate(), hh: d.getHours(), mm: d.getMinutes(), ss: d.getSeconds() };
+  }
+
+  // ---------- public: parse a whole in-memory buffer ----------
+  function parseBuffer(buf, name) {
+    const dv = dvOf(buf);
+    let res = null;
+    const jt = findJpegTiff(dv);
+    if (jt >= 0) res = parseTiff(dv, jt);
+    if (!res && isHeifBrand(dv)) {
+      const r = heifExifRange(dv);
+      if (r && r.start + r.length <= dv.byteLength) {
+        const sub = new DataView(dv.buffer, dv.byteOffset + r.start, Math.min(r.length, dv.byteLength - r.start));
+        const t = tiffInExifItem(sub);
+        if (t >= 0) res = parseTiff(sub, t);
+      }
+    }
+    if (!res) res = { date: null, lat: null, lon: null };
+    if (!res.date) {
+      res.date = dateFromName(name);
+      res.dateSource = res.date ? 'name' : null;
+    } else {
+      res.dateSource = 'exif';
+    }
+    return res;
+  }
+
+  const api = {
+    parseBuffer, parseTiff, findJpegTiff, heifExifRange, tiffInExifItem,
+    isHeifBrand, dateFromName, parseExifDate, fromDate, dvOf
+  };
+  if (typeof module !== 'undefined' && module.exports) module.exports = api;
+  else root.ExifLite = api;
+})(typeof self !== 'undefined' ? self : this);
+
+/* Filesystem-agnostic planning + organizing engine.
+   Works against anything implementing the File System Access handle shape,
+   so it can be driven by a real directory handle in Chrome or a mock in tests. */
+(function (root) {
+  'use strict';
+
+  const IMAGE_EXT = ['jpg', 'jpeg', 'png', 'heic', 'heif', 'webp', 'gif', 'bmp', 'tif', 'tiff', 'avif', 'dng', 'raw', 'cr2', 'nef', 'arw'];
+  const VIDEO_EXT = ['mp4', 'mov', 'm4v', '3gp', 'avi', 'mkv', 'webm'];
+
+  const NO_DATE = 'ללא תאריך';
+  const NO_PLACE = 'ללא מיקום';
+  const NO_MATCH = 'ללא התאמה';
+  const NO_PROJECT = 'ללא תיקייה';
+
+  const AUDIO_EXT = ['mp3', 'm4a', 'aac', 'wav', 'ogg', 'opus', 'flac', 'amr', 'wma', 'aiff'];
+  const DOC_EXT = ['pdf', 'doc', 'docx', 'docm', 'odt', 'rtf', 'txt', 'md', 'markdown',
+    'xls', 'xlsx', 'xlsm', 'ods', 'csv', 'tsv', 'ppt', 'pptx', 'pptm', 'odp',
+    'epub', 'json', 'xml', 'html', 'htm', 'srt', 'vtt', 'log', 'pages', 'numbers', 'key'];
+
+  const KIND = { image: 'תמונות', video: 'סרטונים', audio: 'הקלטות', doc: 'מסמכים', other: 'שונות' };
+
+  function ext(name) {
+    const i = name.lastIndexOf('.');
+    return i < 0 ? '' : name.slice(i + 1).toLowerCase();
+  }
+  function isImage(name) { return IMAGE_EXT.includes(ext(name)); }
+  function isVideo(name) { return VIDEO_EXT.includes(ext(name)); }
+  function isAudio(name) { return AUDIO_EXT.includes(ext(name)); }
+  function isDoc(name) { return DOC_EXT.includes(ext(name)); }
+
+  function kindOf(name) {
+    if (isImage(name)) return 'image';
+    if (isVideo(name)) return 'video';
+    if (isAudio(name)) return 'audio';
+    if (isDoc(name)) return 'doc';
+    return 'other';
+  }
+
+  /* opts.kinds is a set of kind ids the user wants; empty/absent means everything. */
+  function wanted(name, kinds) {
+    if (!kinds || !kinds.length) return true;
+    return kinds.indexOf(kindOf(name)) >= 0;
+  }
+
+  /* Characters Android/Windows filesystems reject or mangle, plus control and bidi
+     marks (Hebrew place names can carry RLM/LRM, which makes for unusable folder names).
+     Written with \u escapes on purpose: a literal control byte in the source becomes
+     U+FFFD when this file is inlined into HTML, which silently breaks the character class. */
+  var RESERVED = new RegExp('[\\u0000-\\u001f\\u007f\\u200e\\u200f\\u202a-\\u202e\\u2066-\\u2069/\\\\:*?"<>|]', 'g');
+
+  function sanitize(s) {
+    if (!s) return '';
+    let out = String(s).replace(RESERVED, ' ').replace(/\s+/g, ' ').trim();
+    out = out.replace(/[. ]+$/, '').trim();
+    if (out.length > 60) out = out.slice(0, 60).trim();
+    return out;
+  }
+
+  function pad(n) { return String(n).padStart(2, '0'); }
+
+  const MONTHS = ['ינואר', 'פברואר', 'מרץ', 'אפריל', 'מאי', 'יוני',
+    'יולי', 'אוגוסט', 'ספטמבר', 'אוקטובר', 'נובמבר', 'דצמבר'];
+
+  /* A date level can expand into more than one folder: 'ymd' gives 2026 / 03 מרץ / 11,
+     which is three real nested folders rather than one long name. Numbers lead so a
+     file manager still sorts them chronologically. */
+  function dateParts(date, level) {
+    if (!date) return [NO_DATE];
+    const y = String(date.y);
+    const mNum = pad(date.m);
+    const mName = mNum + ' ' + (MONTHS[date.m - 1] || '');
+    const d = pad(date.d);
+    switch (level) {
+      case 'year': return [y];
+      case 'month': return [`${y}-${mNum}`];
+      case 'ym': return [y, mName];
+      case 'ymd': return [y, mName, d];
+      default: return [`${y}-${mNum}-${d}`];
+    }
+  }
+
+  function dateFolder(date, level) { return dateParts(date, level).join('/'); }
+
+  /* Grid-snap coordinates so nearby photos share one geocoding lookup.
+     ~2 km cells for city naming, ~200 m cells for street naming. */
+  function clusterKey(lat, lon, level) {
+    const step = level === 'street' ? 0.002 : 0.02;
+    const a = Math.round(lat / step) * step;
+    const b = Math.round(lon / step) * step;
+    return a.toFixed(4) + ',' + b.toFixed(4);
+  }
+
+  function placeFolder(item, placeNames, level) {
+    if (item.meta.lat === null || item.meta.lat === undefined) return NO_PLACE;
+    const key = clusterKey(item.meta.lat, item.meta.lon, level);
+    const name = placeNames[key];
+    if (name) return sanitize(name) || NO_PLACE;
+    return sanitize(item.meta.lat.toFixed(3) + ', ' + item.meta.lon.toFixed(3));
+  }
+
+  /* The source subfolder a file came from — "which project was this shot for". */
+  function projectFolder(item) {
+    const rel = item.parentPath || '';
+    const first = rel.split('/')[0];
+    return sanitize(first) || sanitize(item.rootName || '') || NO_PROJECT;
+  }
+
+  /* The first search term that matched this file, in the order the user typed them,
+     so the most important name wins when a file mentions several. */
+  function keywordFolder(item) {
+    const t = item.meta.terms;
+    return (t && t.length) ? (sanitize(t[0]) || NO_MATCH) : NO_MATCH;
+  }
+
+  function typeFolder(item) { return KIND[kindOf(item.name)] || KIND.other; }
+
+  /* One resolver per grouping level. opts.mode is a "-"-joined list of level ids,
+     so "place-date" nests dates inside places and "project-keyword" nests names
+     inside projects — any pair works without special-casing. */
+  const LEVELS = {
+    date: (item, opts) => dateParts(item.meta.date, opts.dateLevel),
+    place: (item, opts, names) => placeFolder(item, names || {}, opts.placeLevel),
+    project: (item) => projectFolder(item),
+    keyword: (item) => keywordFolder(item),
+    type: (item) => typeFolder(item)
+  };
+
+  function modeLevels(mode) {
+    return String(mode || 'date').split('-').filter(k => LEVELS[k]);
+  }
+
+  /* Which folders (outermost first) a given file belongs in. */
+  /* A level may return one folder name or several; flatten so nested date levels
+     become real nested folders. */
+  function folderPathFor(item, opts, placeNames) {
+    const levels = modeLevels(opts.mode);
+    if (!levels.length) return dateParts(item.meta.date, opts.dateLevel);
+    const out = [];
+    for (const k of levels) {
+      const v = LEVELS[k](item, opts, placeNames);
+      Array.isArray(v) ? out.push(...v) : out.push(v);
+    }
+    return out;
+  }
+
+  /* Build the full plan without touching anything on disk. */
+  function planTree(items, opts, placeNames) {
+    const tree = new Map();   // "a/b" -> count
+    const plans = items.map(it => {
+      const parts = folderPathFor(it, opts, placeNames);
+      const key = parts.join('/');
+      tree.set(key, (tree.get(key) || 0) + 1);
+      return { item: it, parts, key };
+    });
+    const folders = [...tree.entries()].sort((a, b) => a[0].localeCompare(b[0], 'he'));
+    return { plans, folders, total: items.length };
+  }
+
+  // ---------- filesystem ops ----------
+
+  async function exists(dir, name) {
+    try { await dir.getFileHandle(name); return true; }
+    catch (e) { return false; }
+  }
+
+  /* Never overwrite. Only used when two source subfolders hold the same filename. */
+  async function freeName(dir, name) {
+    if (!(await exists(dir, name))) return name;
+    const dot = name.lastIndexOf('.');
+    const base = dot > 0 ? name.slice(0, dot) : name;
+    const e = dot > 0 ? name.slice(dot) : '';
+    for (let i = 2; i < 999; i++) {
+      const cand = `${base} (${i})${e}`;
+      if (!(await exists(dir, cand))) return cand;
+    }
+    return `${base} (${Date.now()})${e}`;
+  }
+
+  async function ensureDir(rootHandle, parts, cache) {
+    let cur = rootHandle, path = '';
+    for (const part of parts) {
+      path = path ? path + '/' + part : part;
+      if (cache.has(path)) { cur = cache.get(path); continue; }
+      cur = await cur.getDirectoryHandle(part, { create: true });
+      cache.set(path, cur);
+    }
+    return cur;
+  }
+
+  async function copyFile(srcHandle, destDir, destName) {
+    const file = await srcHandle.getFile();
+    const out = await destDir.getFileHandle(destName, { create: true });
+    const w = await out.createWritable();
+    try {
+      await w.write(file);
+      await w.close();
+    } catch (e) {
+      try { await w.abort(); } catch (_) {}
+      // leave no half-written file behind
+      try { await destDir.removeEntry(destName); } catch (_) {}
+      throw e;
+    }
+    return file.size;
+  }
+
+  /* opts.destination: 'inplace' (move) | 'newfolder' (copy) | 'drive' (handled by caller)
+     hooks: {onProgress(done,total,name), shouldStop(), onError(name,err)} */
+  async function organize(destRoot, plan, opts, hooks) {
+    hooks = hooks || {};
+    const cache = new Map();
+    const moving = opts.destination === 'inplace';
+    let canNativeMove = moving;      // probe once, fall back to copy+delete
+    const result = { moved: 0, copied: 0, renamed: [], failed: [], bytes: 0, stopped: false };
+    let done = 0;
+
+    for (const p of plan.plans) {
+      if (hooks.shouldStop && hooks.shouldStop()) { result.stopped = true; break; }
+      const it = p.item;
+      try {
+        const destDir = await ensureDir(destRoot, p.parts, cache);
+
+        // already in the right place? (re-running on an organised folder)
+        if (moving && it.parentPath === p.parts.join('/')) { done++; continue; }
+
+        const name = await freeName(destDir, it.name);
+        if (name !== it.name) result.renamed.push({ from: it.name, to: name });
+
+        let didNativeMove = false;
+        if (canNativeMove && name === it.name && typeof it.handle.move === 'function') {
+          try {
+            await it.handle.move(destDir, name);
+            didNativeMove = true;
+          } catch (e) {
+            canNativeMove = false;   // Android content-URIs often refuse; stop trying
+          }
+        }
+
+        if (!didNativeMove) {
+          const size = await copyFile(it.handle, destDir, name);
+          result.bytes += size;
+          if (moving) await it.parent.removeEntry(it.name);
+        }
+        moving ? result.moved++ : result.copied++;
+      } catch (e) {
+        result.failed.push({ name: it.name, error: String(e && e.message || e) });
+        if (hooks.onError) hooks.onError(it.name, e);
+      }
+      done++;
+      if (hooks.onProgress) hooks.onProgress(done, plan.plans.length, it.name);
+    }
+    return result;
+  }
+
+  const api = {
+    IMAGE_EXT, VIDEO_EXT, NO_DATE, NO_PLACE,
+    ext, isImage, isVideo, isAudio, isDoc, kindOf, wanted, sanitize, dateFolder,
+    dateParts, MONTHS,
+    clusterKey, placeFolder, projectFolder, keywordFolder, typeFolder, modeLevels,
+    folderPathFor, planTree, organize, ensureDir, copyFile, freeName, exists,
+    AUDIO_EXT, DOC_EXT, KIND, NO_MATCH, NO_PROJECT
+  };
+  if (typeof module !== 'undefined' && module.exports) module.exports = api;
+  else root.OrgCore = api;
+})(typeof self !== 'undefined' ? self : this);
+
+/* Minimal ZIP writer, STORE method only (photos and video are already compressed,
+   so deflating them costs CPU and saves nothing). No dependencies — this has to run
+   on an iPhone with nothing but the browser.
+
+   Entries are appended as Blob slices rather than accumulated as ArrayBuffers, so the
+   browser can spill the archive to disk instead of holding a gigabyte in memory. */
+(function (root) {
+  'use strict';
+
+  var CRC_TABLE = (function () {
+    var t = new Uint32Array(256);
+    for (var n = 0; n < 256; n++) {
+      var c = n;
+      for (var k = 0; k < 8; k++) c = (c & 1) ? (0xEDB88320 ^ (c >>> 1)) : (c >>> 1);
+      t[n] = c >>> 0;
+    }
+    return t;
+  })();
+
+  function crc32(u8, seed) {
+    var c = (seed === undefined ? 0 : seed) ^ 0xFFFFFFFF;
+    for (var i = 0; i < u8.length; i++) c = CRC_TABLE[(c ^ u8[i]) & 0xFF] ^ (c >>> 8);
+    return (c ^ 0xFFFFFFFF) >>> 0;
+  }
+
+  function utf8(s) {
+    if (typeof TextEncoder !== 'undefined') return new TextEncoder().encode(s);
+    var out = [], i, c;
+    for (i = 0; i < s.length; i++) {
+      c = s.charCodeAt(i);
+      if (c < 0x80) out.push(c);
+      else if (c < 0x800) out.push(0xC0 | (c >> 6), 0x80 | (c & 63));
+      else out.push(0xE0 | (c >> 12), 0x80 | ((c >> 6) & 63), 0x80 | (c & 63));
+    }
+    return new Uint8Array(out);
+  }
+
+  /* MS-DOS packed date/time, so the archive keeps each photo's capture date. */
+  function dosTime(d) {
+    if (!d) d = { y: 1980, m: 1, d: 1, hh: 0, mm: 0, ss: 0 };
+    var y = Math.max(1980, Math.min(2107, d.y || 1980));
+    var time = ((d.hh || 0) << 11) | ((d.mm || 0) << 5) | (((d.ss || 0) / 2) | 0);
+    var date = ((y - 1980) << 9) | ((d.m || 1) << 5) | (d.d || 1);
+    return { time: time & 0xFFFF, date: date & 0xFFFF };
+  }
+
+  function w16(a, v) { a.push(v & 0xFF, (v >>> 8) & 0xFF); }
+  function w32(a, v) { a.push(v & 0xFF, (v >>> 8) & 0xFF, (v >>> 16) & 0xFF, (v >>> 24) & 0xFF); }
+
+  var FLAG_UTF8 = 0x0800;
+
+  function ZipWriter() {
+    this.parts = [];     // Blob | Uint8Array pieces, in output order
+    this.entries = [];
+    this.offset = 0;
+    this.names = Object.create(null);
+  }
+
+  /* ZIP has no directory separator other than "/", and no drive letters. */
+  ZipWriter.prototype.safePath = function (parts, name) {
+    var clean = parts.concat([name]).map(function (p) {
+      return String(p).replace(/[\\/]/g, '_').replace(/^\.+$/, '_');
+    });
+    var path = clean.join('/');
+    if (!this.names[path]) { this.names[path] = 1; return path; }
+    var dot = name.lastIndexOf('.');
+    var base = dot > 0 ? name.slice(0, dot) : name;
+    var ext = dot > 0 ? name.slice(dot) : '';
+    var i = 2;
+    var cand;
+    do {
+      cand = clean.slice(0, -1).concat([base + ' (' + i + ')' + ext]).join('/');
+      i++;
+    } while (this.names[cand] && i < 9999);
+    this.names[cand] = 1;
+    return cand;
+  };
+
+  /* data: Uint8Array. date: {y,m,d,hh,mm,ss} or null. */
+  ZipWriter.prototype.add = function (path, data, date) {
+    var nameBytes = utf8(path);
+    var crc = crc32(data);
+    var dt = dosTime(date);
+    var h = [];
+    w32(h, 0x04034b50);
+    w16(h, 20); w16(h, FLAG_UTF8); w16(h, 0);
+    w16(h, dt.time); w16(h, dt.date);
+    w32(h, crc); w32(h, data.length); w32(h, data.length);
+    w16(h, nameBytes.length); w16(h, 0);
+    var header = new Uint8Array(h.length + nameBytes.length);
+    header.set(h, 0); header.set(nameBytes, h.length);
+
+    this.entries.push({
+      nameBytes: nameBytes, crc: crc, size: data.length,
+      time: dt.time, date: dt.date, offset: this.offset
+    });
+    this.parts.push(header);
+    /* Hand the bytes to a Blob immediately so the Uint8Array can be collected —
+       otherwise a 2 GB folder means 2 GB of live JS heap on a phone. */
+    this.parts.push(typeof Blob !== 'undefined' ? new Blob([data]) : data);
+    this.offset += header.length + data.length;
+    return path;
+  };
+
+  ZipWriter.prototype.finish = function () {
+    var cdStart = this.offset, cd = [];
+    for (var i = 0; i < this.entries.length; i++) {
+      var e = this.entries[i];
+      var h = [];
+      w32(h, 0x02014b50);
+      w16(h, 20); w16(h, 20); w16(h, FLAG_UTF8); w16(h, 0);
+      w16(h, e.time); w16(h, e.date);
+      w32(h, e.crc); w32(h, e.size); w32(h, e.size);
+      w16(h, e.nameBytes.length); w16(h, 0); w16(h, 0);
+      w16(h, 0); w16(h, 0); w32(h, 0);
+      w32(h, e.offset);
+      var rec = new Uint8Array(h.length + e.nameBytes.length);
+      rec.set(h, 0); rec.set(e.nameBytes, h.length);
+      cd.push(rec);
+      this.offset += rec.length;
+    }
+    var end = [];
+    w32(end, 0x06054b50);
+    w16(end, 0); w16(end, 0);
+    w16(end, this.entries.length); w16(end, this.entries.length);
+    w32(end, this.offset - cdStart); w32(end, cdStart);
+    w16(end, 0);
+    var all = this.parts.concat(cd, [new Uint8Array(end)]);
+    if (typeof Blob !== 'undefined') return new Blob(all, { type: 'application/zip' });
+    return all;   // node: caller concatenates
+  };
+
+  /* A ZIP without ZIP64 cannot address past 4 GiB. Refuse loudly rather than
+     hand back a corrupt archive that fails hours later on the user's desktop. */
+  ZipWriter.LIMIT = 4 * 1024 * 1024 * 1024 - 1;
+
+  var api = { ZipWriter: ZipWriter, crc32: crc32, dosTime: dosTime, utf8: utf8 };
+  if (typeof module !== 'undefined' && module.exports) module.exports = api;
+  else root.ZipLite = api;
+})(typeof self !== 'undefined' ? self : this);
+
+/* Pulls readable text out of a file so keywords and names can be matched against
+   what is INSIDE it, not just its name. No dependencies — decompression rides on
+   the browser's own DecompressionStream.
+
+   Handles: plain-text family, OOXML (docx/xlsx/pptx), PDF, and EPUB/HTML.
+   Anything else returns null and the caller falls back to the filename. */
+(function (root) {
+  'use strict';
+
+  var TEXTY = ['txt', 'md', 'markdown', 'csv', 'tsv', 'json', 'xml', 'html', 'htm',
+    'srt', 'vtt', 'log', 'yml', 'yaml', 'ics', 'vcf', 'sql', 'js', 'ts', 'css',
+    'py', 'java', 'c', 'h', 'cpp', 'sh', 'ini', 'cfg', 'conf', 'rtf', 'tex'];
+  var OOXML = {
+    docx: ['word/document.xml', 'word/footnotes.xml', 'word/header'],
+    docm: ['word/document.xml'],
+    xlsx: ['xl/sharedStrings.xml', 'xl/worksheets/'],   // inline strings live in the sheet
+    xlsm: ['xl/sharedStrings.xml', 'xl/worksheets/'],
+    pptx: ['ppt/slides/', 'ppt/notesSlides/'],
+    pptm: ['ppt/slides/'],
+    odt: ['content.xml'], ods: ['content.xml'], odp: ['content.xml']
+  };
+
+  var MAX_BYTES = 8 * 1024 * 1024;   // never read more than this from one file
+  var MAX_CHARS = 400000;            // and never keep more than this much text
+
+  function ext(name) {
+    var i = String(name).lastIndexOf('.');
+    return i < 0 ? '' : String(name).slice(i + 1).toLowerCase();
+  }
+
+  function canExtract(name) {
+    var e = ext(name);
+    return TEXTY.indexOf(e) >= 0 || !!OOXML[e] || e === 'pdf' || e === 'epub';
+  }
+
+  function decode(bytes) {
+    try { return new TextDecoder('utf-8', { fatal: false }).decode(bytes); }
+    catch (e) { return ''; }
+  }
+
+  async function inflate(bytes, format) {
+    if (typeof DecompressionStream === 'undefined') return null;
+    try {
+      var ds = new DecompressionStream(format);
+      var stream = new Blob([bytes]).stream().pipeThrough(ds);
+      var buf = await new Response(stream).arrayBuffer();
+      return new Uint8Array(buf);
+    } catch (e) { return null; }
+  }
+
+  // ---------- minimal ZIP reader (OOXML and EPUB are zip containers) ----------
+  function u16(dv, o) { return dv.getUint16(o, true); }
+  function u32(dv, o) { return dv.getUint32(o, true); }
+
+  function zipEntries(bytes) {
+    var dv = new DataView(bytes.buffer, bytes.byteOffset, bytes.byteLength);
+    var eocd = -1;
+    for (var i = bytes.length - 22; i >= 0 && i > bytes.length - 66000; i--) {
+      if (u32(dv, i) === 0x06054b50) { eocd = i; break; }
+    }
+    if (eocd < 0) return [];
+    var count = u16(dv, eocd + 10);
+    var cdOff = u32(dv, eocd + 16);
+    var out = [], p = cdOff;
+    for (var n = 0; n < count && p + 46 <= bytes.length; n++) {
+      if (u32(dv, p) !== 0x02014b50) break;
+      var method = u16(dv, p + 10);
+      var csize = u32(dv, p + 20);
+      var nameLen = u16(dv, p + 28);
+      var extraLen = u16(dv, p + 30);
+      var cmtLen = u16(dv, p + 32);
+      var lho = u32(dv, p + 42);
+      var name = decode(bytes.subarray(p + 46, p + 46 + nameLen));
+      out.push({ name: name, method: method, csize: csize, lho: lho });
+      p += 46 + nameLen + extraLen + cmtLen;
+    }
+    return out;
+  }
+
+  async function zipRead(bytes, entry) {
+    var dv = new DataView(bytes.buffer, bytes.byteOffset, bytes.byteLength);
+    var p = entry.lho;
+    if (p + 30 > bytes.length || u32(dv, p) !== 0x04034b50) return null;
+    var nameLen = u16(dv, p + 26), extraLen = u16(dv, p + 28);
+    var start = p + 30 + nameLen + extraLen;
+    var raw = bytes.subarray(start, start + entry.csize);
+    if (entry.method === 0) return raw;
+    if (entry.method === 8) return await inflate(raw, 'deflate-raw');
+    return null;
+  }
+
+  function stripTags(xml) {
+    return xml
+      .replace(/<\/(w:p|w:tr|a:p|text:p)>/g, '\n')
+      .replace(/<[^>]*>/g, ' ')
+      .replace(/&#(\d+);/g, function (_, d) { return String.fromCharCode(+d); })
+      .replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&amp;/g, '&')
+      .replace(/&quot;/g, '"').replace(/&apos;/g, "'").replace(/&nbsp;/g, ' ')
+      .replace(/[ \t]+/g, ' ');
+  }
+
+  async function fromOoxml(bytes, wanted) {
+    var entries = zipEntries(bytes);
+    if (!entries.length) return null;
+    var picked = entries.filter(function (e) {
+      return wanted.some(function (w) {
+        return w.charAt(w.length - 1) === '/' ? e.name.indexOf(w) === 0 : e.name === w;
+      });
+    });
+    if (!picked.length) return null;
+    var out = '';
+    for (var i = 0; i < picked.length && out.length < MAX_CHARS; i++) {
+      var data = await zipRead(bytes, picked[i]);
+      if (data) out += stripTags(decode(data)) + '\n';
+    }
+    return out || null;
+  }
+
+  async function fromEpub(bytes) {
+    var entries = zipEntries(bytes).filter(function (e) {
+      return /\.x?html?$/i.test(e.name);
+    }).slice(0, 40);
+    var out = '';
+    for (var i = 0; i < entries.length && out.length < MAX_CHARS; i++) {
+      var data = await zipRead(bytes, entries[i]);
+      if (data) out += stripTags(decode(data)) + '\n';
+    }
+    return out || null;
+  }
+
+  /* PDF filters chain. ReportLab and friends emit /Filter [/ASCII85Decode /FlateDecode],
+     so the bytes must be un-ASCII85'd before they are anything like deflate. */
+  function ascii85(bytes) {
+    var s = '';
+    for (var i = 0; i < bytes.length; i++) s += String.fromCharCode(bytes[i]);
+    s = s.replace(/^\s*<~/, '').replace(/~>[\s\S]*$/, '').replace(/\s+/g, '');
+    var out = [], tuple = 0, count = 0, j, k;
+    for (j = 0; j < s.length; j++) {
+      var c = s.charCodeAt(j);
+      if (c === 122 && count === 0) { out.push(0, 0, 0, 0); continue; }   // 'z' => four zeros
+      if (c < 33 || c > 117) continue;
+      tuple = tuple * 85 + (c - 33);
+      if (++count === 5) {
+        out.push((tuple / 16777216) & 255, (tuple / 65536) & 255, (tuple / 256) & 255, tuple & 255);
+        tuple = 0; count = 0;
+      }
+    }
+    if (count > 1) {
+      for (k = count; k < 5; k++) tuple = tuple * 85 + 84;
+      var b4 = [(tuple / 16777216) & 255, (tuple / 65536) & 255, (tuple / 256) & 255, tuple & 255];
+      for (k = 0; k < count - 1; k++) out.push(b4[k]);
+    }
+    return new Uint8Array(out);
+  }
+
+  function asciiHex(bytes) {
+    var s = '';
+    for (var i = 0; i < bytes.length; i++) s += String.fromCharCode(bytes[i]);
+    s = s.replace(/>[\s\S]*$/, '').replace(/[^0-9A-Fa-f]/g, '');
+    if (s.length % 2) s += '0';
+    var out = new Uint8Array(s.length / 2);
+    for (var j = 0; j < out.length; j++) out[j] = parseInt(s.substr(j * 2, 2), 16);
+    return out;
+  }
+
+  // ---------- PDF ----------
+  /* Pulls the text-showing operators out of each content stream. Good enough to
+     find a name or a keyword; not a faithful layout extraction. */
+  function pdfTextFromStream(s) {
+    var out = [];
+    // ( ... ) Tj   and   [ (..) -250 (..) ] TJ
+    var re = /\((?:\\.|[^\\()])*\)/g;
+    var m;
+    while ((m = re.exec(s)) !== null) {
+      var lit = m[0].slice(1, -1)
+        .replace(/\\([nrtbf])/g, ' ')
+        .replace(/\\([0-7]{1,3})/g, function (_, o) { return String.fromCharCode(parseInt(o, 8)); })
+        .replace(/\\(.)/g, '$1');
+      if (lit.trim()) out.push(lit);
+    }
+    // <hex> Tj
+    var hre = /<([0-9A-Fa-f\s]{4,})>\s*Tj/g;
+    while ((m = hre.exec(s)) !== null) {
+      var hex = m[1].replace(/\s+/g, '');
+      var t = '';
+      for (var i = 0; i + 3 < hex.length; i += 4) {
+        var cp = parseInt(hex.substr(i, 4), 16);
+        if (cp > 31 && cp < 0xFFFD) t += String.fromCharCode(cp);
+      }
+      if (t.trim()) out.push(t);
+    }
+    return out.join(' ');
+  }
+
+  async function fromPdf(bytes) {
+    var latin = '';
+    for (var i = 0; i < bytes.length; i++) latin += String.fromCharCode(bytes[i]);
+    var out = '';
+    var re = /stream\r?\n?/g, m;
+    while ((m = re.exec(latin)) !== null && out.length < MAX_CHARS) {
+      var start = m.index + m[0].length;
+      var end = latin.indexOf('endstream', start);
+      if (end < 0) break;
+      var head = latin.slice(Math.max(0, m.index - 400), m.index);
+      var raw = bytes.subarray(start, end);
+      var data = raw;
+      if (/\/DCTDecode|\/JPXDecode|\/CCITTFaxDecode|\/JBIG2Decode/.test(head)) data = null;
+      if (data && /\/ASCII85Decode/.test(head)) data = ascii85(data);
+      if (data && /\/ASCIIHexDecode/.test(head)) data = asciiHex(data);
+      if (data && /\/FlateDecode/.test(head)) data = await inflate(data, 'deflate');
+      if (data) {
+        var chunk = pdfTextFromStream(decode(data));
+        if (chunk) out += chunk + '\n';
+      }
+      re.lastIndex = end;
+    }
+    // some PDFs keep plain text outside compressed streams
+    if (!out.trim()) out = pdfTextFromStream(latin);
+    return out.trim() ? out : null;
+  }
+
+  /* file: a File/Blob with .name, or {name, bytes} in tests. */
+  async function extractText(file, name) {
+    name = name || file.name || '';
+    var e = ext(name);
+    if (!canExtract(name)) return null;
+    var size = file.size !== undefined ? file.size : (file.bytes ? file.bytes.length : 0);
+    if (size > MAX_BYTES) return null;
+    var bytes;
+    try {
+      bytes = file.bytes ? file.bytes : new Uint8Array(await file.arrayBuffer());
+    } catch (err) { return null; }
+
+    try {
+      if (TEXTY.indexOf(e) >= 0) {
+        var t = decode(bytes);
+        if (e === 'html' || e === 'htm' || e === 'xml') t = stripTags(t);
+        return t.slice(0, MAX_CHARS);
+      }
+      if (OOXML[e]) return await fromOoxml(bytes, OOXML[e]);
+      if (e === 'epub') return await fromEpub(bytes);
+      if (e === 'pdf') return await fromPdf(bytes);
+    } catch (err) { return null; }
+    return null;
+  }
+
+  /* Case- and diacritic-insensitive contains, so "כהן" matches "כֹּהֵן"
+     and "Cohen" matches "COHEN". */
+  function norm(s) {
+    s = String(s || '').toLowerCase();
+    try { s = s.normalize('NFKD').replace(/[̀-֑ͯ-ׇ]/g, ''); }
+    catch (e) {}
+    return s;
+  }
+
+  function findTerms(haystack, terms) {
+    var h = norm(haystack), hit = [];
+    for (var i = 0; i < terms.length; i++) {
+      var t = norm(terms[i]).trim();
+      if (t && h.indexOf(t) >= 0) hit.push(terms[i]);
+    }
+    return hit;
+  }
+
+  var api = { extractText: extractText, canExtract: canExtract, findTerms: findTerms,
+    norm: norm, ext: ext, zipEntries: zipEntries, stripTags: stripTags, ascii85: ascii85 };
+  if (typeof module !== 'undefined' && module.exports) module.exports = api;
+  else root.TextLite = api;
+})(typeof self !== 'undefined' ? self : this);
+
+
+(function () {
+  'use strict';
+  var E = self.ExifLite, C = self.OrgCore, X = self.TextLite;
+
+
+  var $ = function (s) { return document.querySelector(s); };
+  var state = {
+    mode: 'fs', root: null, rootName: '', items: [], retryPlans: null, opts: {
+      l1: 'date', l2: '', mode: 'date', dateLevel: 'day', placeLevel: 'city',
+      destination: 'newfolder', recurse: false, deep: true,
+      kinds: ['image', 'video', 'audio', 'doc', 'other'], terms: []
+    }, places: {}, plan: null, stop: false, geoFailed: false, termsDone: ''
+  };
+
+  /* Files are scanned once, unfiltered; the kind checkboxes narrow the plan
+     afterwards so changing your mind never means re-reading the folder. */
+  function activeItems() {
+    return state.items.filter(function (i) { return C.wanted(i.name, state.opts.kinds); });
+  }
+
+  function show(id) {
+    document.querySelectorAll('.screen').forEach(function (s) { s.classList.remove('on'); });
+    $('#' + id).classList.add('on');
+    window.scrollTo(0, 0);
+  }
+  function ls(k, v) {
+    try { if (v === undefined) return localStorage.getItem(k); localStorage.setItem(k, v); }
+    catch (e) { return null; }
+  }
+
+  // ---------- support check ----------
+  /* Two separate reasons the picker can be missing, and the fix differs for each:
+     a downloaded file opened from the Files app has no secure origin, so the API is
+     absent even in a perfectly capable Chrome. Say which one it is. */
+  if (typeof window.showDirectoryPicker !== 'function') {
+    var insecure = (window.isSecureContext === false);
+    $('#support-note').innerHTML = insecure
+      ? 'הדף נפתח כקובץ מקומי, ולכן הדפדפן לא נותן לו גישה לקבצים. צריך לפתוח אותו מכתובת אינטרנט שמתחילה ב‑<b>https</b>.'
+      : 'הדפדפן הזה לא נותן לסדר תיקייה במקום, אז אני אקרא את הקבצים ואחזיר לך <b>קובץ ZIP</b> מסודר בתיקיות. ' +
+        'לסידור ישירות בתוך התיקייה שבטלפון צריך <b>Chrome</b> 132 ומעלה.';
+    if (insecure) $('#pick').disabled = true;
+  }
+  /* A framed page is a dead end for both the folder picker and the OAuth redirect.
+     Rather than explain that, hand over a button that jumps out of the frame. */
+  if (window.top !== window.self) {
+    $('#support-note').innerHTML +=
+      '<br>הדף רץ בתוך מסגרת של אתר אחר, וזה עלול לחסום גם את בחירת התיקייה וגם את החיבור לדרייב.' +
+      '<br><button class="unframe">פתח בלשונית נפרדת</button>';
+  }
+
+  // ---------- chips ----------
+  document.querySelectorAll('.chips').forEach(function (grp) {
+    grp.addEventListener('click', function (e) {
+      var b = e.target.closest('.chip'); if (!b) return;
+      grp.querySelectorAll('.chip').forEach(function (c) { c.classList.remove('sel'); });
+      b.classList.add('sel');
+      state.opts[grp.id.slice(2)] = b.dataset.v;
+      syncOptionUI();
+    });
+  });
+
+  var LEVEL_NAME = { date: 'תאריך', place: 'מקום', project: 'תיקיית המקור',
+    keyword: 'המילה שהתאימה', type: 'סוג הקובץ' };
+
+  function syncOptionUI() {
+    var o = state.opts;
+    o.mode = o.l2 ? (o.l1 + '-' + o.l2) : o.l1;
+    var levels = C.modeLevels(o.mode);
+    var has = function (k) { return levels.indexOf(k) >= 0; };
+
+    $('#grp-date').style.display = has('date') ? '' : 'none';
+    $('#grp-place').style.display = has('place') ? '' : 'none';
+    $('#grp-keyword').style.display = has('keyword') ? '' : 'none';
+
+    var DL = { year: '2026', month: '2026-03', day: '2026-03-11',
+      ym: '2026 ← 03 מרץ', ymd: '2026 ← 03 מרץ ← 11' };
+    $('#date-hint').textContent = 'תיראה כך: ' + (DL[o.dateLevel] || '');
+
+    $('#mode-hint').textContent = levels.length < 2
+      ? 'תיקייה אחת לכל ' + (LEVEL_NAME[o.l1] || '') + '.'
+      : 'תיקייה לכל ' + LEVEL_NAME[o.l1] + ', ובתוכה תיקייה לכל ' + LEVEL_NAME[o.l2] + '.';
+
+    // the same level twice would just nest a folder inside itself
+    $('#g-l2').querySelectorAll('.chip').forEach(function (b) {
+      b.disabled = b.dataset.v !== '' && b.dataset.v === o.l1;
+      b.style.opacity = b.disabled ? '.4' : '';
+    });
+    if (o.l2 && o.l2 === o.l1) selectChip('g-l2', '');
+
+    var n = activeItems().length;
+    $('#kinds-hint').textContent = n === state.items.length
+      ? 'כל ' + n + ' הקבצים ייכללו.'
+      : n + ' מתוך ' + state.items.length + ' קבצים ייכללו.';
+    $('#go-preview').disabled = n === 0;
+  }
+
+  $('#opt-recurse').addEventListener('change', function (e) { state.opts.recurse = e.target.checked; });
+  $('#opt-deep').addEventListener('change', function (e) {
+    state.opts.deep = e.target.checked; state.termsDone = '';
+  });
+  $('#terms').addEventListener('input', function (e) {
+    state.opts.terms = e.target.value.split(',').map(function (t) { return t.trim(); })
+      .filter(function (t) { return t.length > 1; });
+    state.termsDone = '';
+  });
+  $('#g-kinds').addEventListener('change', function () {
+    state.opts.kinds = Array.prototype.slice
+      .call($('#g-kinds').querySelectorAll('input:checked'))
+      .map(function (c) { return c.dataset.k; });
+    state.termsDone = '';
+    syncOptionUI();
+  });
+
+  // ---------- settings ----------
+  if (!(ls('driveClientId') || '').trim())
+    $('#drive-note').textContent = 'המקור נשאר בטלפון. דורש הגדרה חד־פעמית ב־Google (הגדרות).';
+
+  $('#origin').textContent = location.origin;
+  $('#cid').value = ls('driveClientId') || '';
+
+  document.querySelectorAll('.copy').forEach(function (b) {
+    b.onclick = async function () {
+      var txt = $('#' + b.dataset.copy).textContent;
+      try { await navigator.clipboard.writeText(txt); b.textContent = 'הועתק'; }
+      catch (e) { b.textContent = 'סמן ידנית'; }
+      setTimeout(function () { b.textContent = 'העתק'; }, 1600);
+    };
+  });
+
+  /* Inside an iframe the redirect URI is the frame's URL, not the address in the
+     phone's address bar — Google will reject it and the error is unhelpful. */
+  if (window.top !== window.self) {
+    $('#frame-warn').innerHTML = '<div class="fw">הדף רץ בתוך מסגרת של אתר אחר, ולכן הכתובת שלמעלה היא ' +
+      'של המסגרת ולא זו שבשורת הכתובת — גוגל ידחה אותה. פתח בלשונית נפרדת לפני שאתה רושם.' +
+      '<br><button class="unframe">פתח בלשונית נפרדת</button></div>';
+  }
+  document.querySelectorAll('.unframe').forEach(function (b) {
+    b.onclick = function () { window.open(location.href, '_blank', 'noopener'); };
+  });
+  $('#gear').onclick = function () { $('#settings').classList.add('on'); };
+  $('#close-settings').onclick = function () { $('#settings').classList.remove('on'); };
+  $('#save-cid').onclick = function () {
+    ls('driveClientId', $('#cid').value.trim());
+    $('#settings').classList.remove('on');
+  };
+
+  // ---------- 1. pick folder ----------
+  /* Chrome on Android and desktop can hand over a writable folder. Safari, iOS and
+     Firefox cannot — there the browser only gives a read-only list of files, so the
+     same pipeline runs and the result comes back out as a ZIP instead. */
+  var CAN_DIR = typeof window.showDirectoryPicker === 'function';
+  var CAN_DIR_INPUT = 'webkitdirectory' in document.createElement('input');
+
+  if (!CAN_DIR && CAN_DIR_INPUT) {
+    $('#fi-dir').webkitdirectory = true;
+    $('#pick').disabled = false;
+  }
+  if (!CAN_DIR && !CAN_DIR_INPUT) {
+    $('#pick').textContent = 'בחר תמונות';
+    $('#pick').disabled = false;
+    $('#pick-files').style.display = 'none';
+  }
+
+  $('#pick-files').onclick = function () { $('#fi-any').click(); };
+
+  /* FileList is live: resetting input.value empties it. Snapshot first, then reset,
+     or the async scan finds the list shrinking underneath it. */
+  function onPicked(e) {
+    var arr = Array.prototype.slice.call(e.target.files);
+    e.target.value = '';
+    fromFileList(arr);
+  }
+  $('#fi-dir').onchange = onPicked;
+  $('#fi-any').onchange = onPicked;
+
+  function busy(on, label) {
+    $('#pick').disabled = on;
+    $('#pick-files').disabled = on;
+    if (on) $('#pick').textContent = label;
+    else $('#pick').textContent = (CAN_DIR || CAN_DIR_INPUT) ? 'בחר תיקייה' : 'בחר תמונות';
+  }
+
+  async function fromFileList(list) {
+    if (!list || !list.length) return;
+    state.mode = 'files';
+    state.root = null;
+    var rel = list[0].webkitRelativePath || '';
+    state.rootName = rel ? rel.split('/')[0] : 'תמונות';
+    busy(true, 'קורא…');
+    try { state.items = await scanFiles(list); } finally { busy(false); }
+    finishPick();
+  }
+
+  $('#pick').onclick = async function () {
+    if (!CAN_DIR) { $(CAN_DIR_INPUT ? '#fi-dir' : '#fi-any').click(); return; }
+    var dir;
+    try {
+      dir = await window.showDirectoryPicker({ id: 'photos', mode: 'readwrite', startIn: 'pictures' });
+    } catch (e) { return; }                     // user cancelled
+    if (dir.requestPermission) {
+      var perm = await dir.requestPermission({ mode: 'readwrite' });
+      if (perm !== 'granted') { alert('צריך הרשאת כתיבה כדי לסדר את התיקייה.'); return; }
+    }
+    state.mode = 'fs';
+    state.root = dir; state.rootName = dir.name;
+    busy(true, 'סורק…');
+    try { state.items = await scan(dir, ''); } finally { busy(false); }
+    finishPick();
+  };
+
+  function finishPick() {
+    if (!state.items.length) { alert('לא נמצאו קבצים בבחירה הזאת.'); return; }
+    applyModeToDestinations();
+    var withGps = state.items.filter(function (i) { return i.meta.lat !== null; }).length;
+    $('#found').innerHTML = 'נמצאו <b>' + state.items.length + '</b> קבצים ב«' + esc(state.rootName) + '»' +
+      '<br><span style="color:#8b95a4;font-size:14px">' + withGps + ' מהם עם נתוני מיקום</span>';
+    syncOptionUI();
+    show('s-options');
+  }
+
+  /* A File from an <input> has no writable handle, but everything downstream only
+     ever calls getFile() — so wrap it and the rest of the pipeline cannot tell. */
+  function fileHandle(f) { return { getFile: function () { return Promise.resolve(f); } }; }
+
+  async function scanFiles(list) {
+    var items = [];
+    for (var i = 0; i < list.length; i++) {
+      var f = list[i];
+      var meta = { date: null, lat: null, lon: null, dateSource: null, terms: [] };
+      if (C.isImage(f.name)) { try { meta = await readMeta(f); meta.terms = []; } catch (e) {} }
+      if (!meta.date) { meta.date = E.dateFromName(f.name); meta.dateSource = meta.date ? 'name' : null; }
+      if (!meta.date) { meta.date = E.fromDate(new Date(f.lastModified)); meta.dateSource = 'mtime'; }
+      var rel = f.webkitRelativePath || '';
+      var parentPath = rel ? rel.split('/').slice(1, -1).join('/') : '';
+      items.push({ name: f.name, handle: fileHandle(f), parent: null, parentPath: parentPath,
+        rootName: state.rootName, meta: meta });
+    }
+    return items;
+  }
+
+  function selectChip(gid, v) {
+    var grp = $('#' + gid);
+    grp.querySelectorAll('.chip').forEach(function (c) { c.classList.remove('sel'); });
+    var b = grp.querySelector('.chip[data-v="' + v + '"]');
+    if (b) b.classList.add('sel');
+    state.opts[gid.slice(2)] = v;
+  }
+
+  /* Writing back into the source folder only exists in File System Access mode. */
+  function applyModeToDestinations() {
+    var fsMode = state.mode === 'fs';
+    ['newfolder', 'inplace'].forEach(function (v) {
+      var b = document.querySelector('#g-destination .chip[data-v="' + v + '"]');
+      if (b) b.style.display = fsMode ? '' : 'none';
+    });
+    if (!fsMode && (state.opts.destination === 'newfolder' || state.opts.destination === 'inplace'))
+      selectChip('g-destination', 'zip');
+  }
+
+  function esc(s) { return String(s).replace(/[&<>"]/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]; }); }
+
+  // ---------- scanning ----------
+  var OUT_MARK = ' — מסודר';
+  async function scan(dirHandle, parentPath) {
+    var items = [];
+    for await (var h of dirHandle.values()) {
+      if (h.kind === 'directory') {
+        if (state.opts.recurse && h.name.indexOf(OUT_MARK) < 0)
+          items = items.concat(await scan(h, parentPath ? parentPath + '/' + h.name : h.name));
+        continue;
+      }
+      var file = await h.getFile();
+      var meta = { date: null, lat: null, lon: null, dateSource: null, terms: [] };
+      if (C.isImage(h.name)) { try { meta = await readMeta(file); meta.terms = []; } catch (e) {} }
+      if (!meta.date) { meta.date = E.dateFromName(h.name); meta.dateSource = meta.date ? 'name' : null; }
+      if (!meta.date) { meta.date = E.fromDate(new Date(file.lastModified)); meta.dateSource = 'mtime'; }
+      items.push({ name: h.name, handle: h, parent: dirHandle, parentPath: parentPath,
+        rootName: state.rootName, meta: meta });
+    }
+    return items;
+  }
+
+  /* Read only the head of the file: EXIF lives at the front of a JPEG, and a HEIF's
+     meta box (which points at the EXIF item) does too. Reading 128 KB instead of the
+     whole photo is the difference between a minute and ten on a big folder — but if
+     that comes up empty we retry with a wider window before giving up. */
+  async function readMeta(file, name) {
+    var r = await readMetaWindow(file, 131072);
+    if (r && (r.date || r.lat !== null)) return r;
+    if (file.size > 131072) {
+      var r2 = await readMetaWindow(file, 1048576);
+      if (r2 && (r2.date || r2.lat !== null)) return r2;
+    }
+    return { date: null, lat: null, lon: null, dateSource: null };
+  }
+
+  async function readMetaWindow(file, bytes) {
+    var head = await file.slice(0, bytes).arrayBuffer();
+    var dv = new DataView(head);
+    var jt = E.findJpegTiff(dv);
+    if (jt >= 0) { var r = E.parseTiff(dv, jt); if (r) { r.dateSource = r.date ? 'exif' : null; return r; } }
+    if (E.isHeifBrand(dv)) {
+      var range = E.heifExifRange(dv);
+      if (range && range.length > 0 && range.length < 4e6 && range.start + range.length <= file.size) {
+        var buf = await file.slice(range.start, range.start + range.length).arrayBuffer();
+        var sub = new DataView(buf);
+        var t = E.tiffInExifItem(sub);
+        if (t >= 0) { var r2 = E.parseTiff(sub, t); if (r2) { r2.dateSource = r2.date ? 'exif' : null; return r2; } }
+      }
+    }
+    return null;
+  }
+
+  // ---------- 2. options -> preview ----------
+  $('#back1').onclick = function () { show('s-welcome'); };
+  $('#back2').onclick = function () { show('s-options'); };
+
+  $('#go-preview').onclick = async function () {
+    if (state.opts.destination === 'drive' && !(ls('driveClientId') || '').trim()) {
+      $('#settings').classList.add('on'); return;
+    }
+    var levels = C.modeLevels(state.opts.mode);
+    if (levels.indexOf('keyword') >= 0) {
+      if (!state.opts.terms.length) { alert('צריך למלא לפחות מילת מפתח אחת.'); $('#terms').focus(); return; }
+      if (!(await resolveTerms())) return;
+    }
+    if (levels.indexOf('place') >= 0) {
+      if (!(await resolvePlaces())) return;
+    }
+    state.plan = C.planTree(activeItems(), state.opts, state.places);
+    renderPreview();
+    show('s-preview');
+  };
+
+  /* Matches each file against the search terms — first by name, then, when asked,
+     by what is actually written inside it. Re-run only when the terms change. */
+  async function resolveTerms() {
+    var items = activeItems();
+    var sig = state.opts.terms.join('|') + '#' + (state.opts.deep ? 'deep' : 'name') +
+      '#' + items.length;
+    if (state.termsDone === sig) return true;
+
+    show('s-run');
+    $('#run-title').textContent = 'מחפש בקבצים…';
+    state.stop = false;
+    var deep = state.opts.deep, terms = state.opts.terms;
+    for (var i = 0; i < items.length; i++) {
+      if (state.stop) return false;
+      var it = items[i];
+      setProgress(i, items.length, it.name);
+      it.meta.terms = X.findTerms(it.name, terms);
+      if (!it.meta.terms.length && deep && X.canExtract(it.name)) {
+        try {
+          var f = await it.handle.getFile();
+          var text = await X.extractText(f, it.name);
+          if (text) it.meta.terms = X.findTerms(text, terms);
+        } catch (e) {}
+      }
+      if (i % 12 === 0) await sleep(0);   // keep the progress bar honest
+    }
+    state.termsDone = sig;
+    return true;
+  }
+
+  // ---------- geocoding ----------
+  function sleep(ms) { return new Promise(function (r) { setTimeout(r, ms); }); }
+
+  async function resolvePlaces() {
+    var lvl = state.opts.placeLevel;
+    var keys = {};
+    state.items.forEach(function (i) {
+      if (i.meta.lat === null) return;
+      var k = C.clusterKey(i.meta.lat, i.meta.lon, lvl);
+      if (!keys[k]) keys[k] = { lat: i.meta.lat, lon: i.meta.lon };
+    });
+    var todo = [];
+    for (var k in keys) {
+      var cached = ls('geo:' + lvl + ':' + k);
+      if (cached) state.places[k] = cached; else todo.push(k);
+    }
+    if (!todo.length) return true;
+
+    show('s-run');
+    $('#run-title').textContent = 'מזהה מיקומים…';
+    state.stop = false;
+    var fails = 0;
+    for (var i = 0; i < todo.length; i++) {
+      if (state.stop) return false;
+      setProgress(i, todo.length, todo[i]);
+      var nm = await reverseGeocode(keys[todo[i]].lat, keys[todo[i]].lon, lvl);
+      if (nm) { state.places[todo[i]] = nm; ls('geo:' + lvl + ':' + todo[i], nm); }
+      else fails++;
+      if (i < todo.length - 1) await sleep(1100);   // Nominatim asks for max 1 req/sec
+    }
+    state.geoFailed = fails > 0;
+    return true;
+  }
+
+  async function reverseGeocode(lat, lon, lvl) {
+    var zoom = lvl === 'street' ? 18 : 10;
+    var url = 'https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat=' + lat +
+      '&lon=' + lon + '&zoom=' + zoom + '&accept-language=he';
+    try {
+      var ctl = new AbortController();
+      var t = setTimeout(function () { ctl.abort(); }, 12000);
+      var res = await fetch(url, { signal: ctl.signal });
+      clearTimeout(t);
+      if (!res.ok) return null;
+      var j = await res.json();
+      return labelFrom(j, lvl);
+    } catch (e) { return null; }
+  }
+
+  function labelFrom(j, lvl) {
+    var a = (j && j.address) || {};
+    var city = a.city || a.town || a.village || a.municipality || a.city_district ||
+      a.county || a.state || (j.display_name || '').split(',')[0];
+    if (lvl !== 'street') return city || null;
+    var detail = [a.road, a.house_number].filter(Boolean).join(' ') ||
+      a.neighbourhood || a.suburb || a.quarter || a.hamlet || '';
+    if (!city) return detail || null;
+    return detail ? city + ' - ' + detail : city;
+  }
+
+  // ---------- 3. preview ----------
+  function renderPreview() {
+    var act = activeItems();
+    var levels = C.modeLevels(state.opts.mode);
+    var noDate = act.filter(function (i) { return !i.meta.date; }).length;
+    var guessed = act.filter(function (i) { return i.meta.dateSource === 'mtime'; }).length;
+    var noGps = act.filter(function (i) { return i.meta.lat === null; }).length;
+    var noTerm = act.filter(function (i) { return !(i.meta.terms && i.meta.terms.length); }).length;
+    var w = [];
+    if (state.opts.destination === 'inplace')
+      w.push('<div class="bad">הקבצים <b>יעברו</b> מהתיקייה הנוכחית לתוך תיקיות המשנה. הם לא נמחקים ולא משנים שם.</div>');
+    if (guessed && levels.indexOf('date') >= 0)
+      w.push('<div>ל‑<b>' + guessed + '</b> קבצים אין תאריך צילום פנימי — השתמשתי בתאריך השינוי של הקובץ.</div>');
+    if (noDate)
+      w.push('<div><b>' + noDate + '</b> קבצים בלי תאריך כלל — ייכנסו ל«' + C.NO_DATE + '».</div>');
+    if (levels.indexOf('place') >= 0 && noGps)
+      w.push('<div><b>' + noGps + '</b> קבצים בלי נתוני מיקום — ייכנסו ל«' + C.NO_PLACE + '».</div>');
+    if (levels.indexOf('keyword') >= 0 && noTerm)
+      w.push('<div><b>' + noTerm + '</b> קבצים לא התאימו לאף מילה — ייכנסו ל«' + C.NO_MATCH + '».</div>');
+    if (state.geoFailed)
+      w.push('<div>חלק מהמיקומים לא זוהו (אין אינטרנט?) — נוצרו תיקיות לפי קואורדינטות.</div>');
+    $('#warn').innerHTML = w.join('');
+
+    $('#tree').innerHTML = state.plan.folders.map(function (f) {
+      var parts = f[0].split('/');
+      var label = parts.map(function (p, i) { return i ? '<i> ← </i>' + esc(p) : esc(p); }).join('');
+      return '<div class="tnode"><span class="p">' + label + '</span><span class="c">' + f[1] + '</span></div>';
+    }).join('');
+
+    $('#run').textContent = state.opts.destination === 'drive'
+      ? 'העלה לדרייב (' + state.plan.total + ')'
+      : state.opts.destination === 'zip'
+        ? 'צור ZIP (' + state.plan.total + ' קבצים)'
+        : 'בצע (' + state.plan.total + ' קבצים)';
+  }
+
+  // ---------- 4. run ----------
+  var wakeLock = null;
+  $('#stop').onclick = function () { state.stop = true; $('#stop').textContent = 'עוצר…'; };
+
+  function setProgress(done, total, name) {
+    var p = total ? Math.round(done / total * 100) : 0;
+    $('#fill').style.width = p + '%';
+    $('#pct').textContent = p + '%';
+    $('#cur').textContent = name || '';
+  }
+
+  $('#run').onclick = async function () {
+    state.stop = false;
+    $('#stop').textContent = 'עצור';
+    $('#run-title').textContent = state.opts.destination === 'drive' ? 'מעלה לדרייב…'
+      : state.opts.destination === 'zip' ? 'בונה קובץ ZIP…' : 'מסדר…';
+    setProgress(0, state.plan.total, '');
+    show('s-run');
+    try { if (navigator.wakeLock) wakeLock = await navigator.wakeLock.request('screen'); } catch (e) {}
+
+    var res;
+    try {
+      var plans = state.retryPlans || state.plan.plans;
+      state.retryPlans = null;
+      if (state.opts.destination === 'drive') res = await runDrive(plans);
+      else if (state.opts.destination === 'zip') res = await runZip(plans);
+      else res = await runLocal();
+    } catch (e) {
+      res = { failed: [{ name: '—', error: String(e && e.message || e) }], moved: 0, copied: 0, renamed: [], stopped: false };
+    }
+    try { if (wakeLock) { wakeLock.release(); wakeLock = null; } } catch (e) {}
+    renderDone(res);
+    show('s-done');
+  };
+
+  async function runLocal() {
+    var destRoot = state.root;
+    if (state.opts.destination === 'newfolder')
+      destRoot = await state.root.getDirectoryHandle(C.sanitize(state.rootName) + OUT_MARK, { create: true });
+
+    var res = await C.organize(destRoot, state.plan, state.opts, {
+      onProgress: setProgress,
+      shouldStop: function () { return state.stop; }
+    });
+    await writeLog(destRoot, res);
+    return res;
+  }
+
+  /* A plain-text record of what went where, so any move can be undone by hand. */
+  async function writeLog(destRoot, res) {
+    try {
+      var lines = ['סידור תיקיות — ' + new Date().toLocaleString('he-IL'),
+        'תיקיית מקור: ' + state.rootName,
+        'חלוקה: ' + state.opts.mode + ' / תאריך ' + state.opts.dateLevel + ' / מיקום ' + state.opts.placeLevel,
+        'פעולה: ' + (state.opts.destination === 'inplace' ? 'העברה במקום' : 'העתקה'), ''];
+      state.plan.plans.forEach(function (p) {
+        lines.push((p.item.parentPath ? p.item.parentPath + '/' : '') + p.item.name + '  ⟵  ' + p.key + '/' + p.item.name);
+      });
+      if (res.failed.length) {
+        lines.push('', 'נכשלו:');
+        res.failed.forEach(function (f) { lines.push(f.name + ' — ' + f.error); });
+      }
+      var fh = await destRoot.getFileHandle('סידור-יומן.txt', { create: true });
+      var w = await fh.createWritable();
+      await w.write(new Blob([lines.join('\n')], { type: 'text/plain;charset=utf-8' }));
+      await w.close();
+    } catch (e) {}
+  }
+
+  // ---------- Google Drive ----------
+  /* Google Identity Services' token client runs the consent popup over postMessage,
+     so Google only ever checks the page's ORIGIN — there is no redirect URI to register
+     and therefore no redirect_uri_mismatch to debug. Origins are scheme+host only,
+     which is far harder to get wrong than a byte-exact path. */
+  function loadGis() {
+    return new Promise(function (resolve, reject) {
+      if (window.google && google.accounts && google.accounts.oauth2) return resolve();
+      var s = document.createElement('script');
+      s.src = 'https://accounts.google.com/gsi/client';
+      s.async = true;
+      s.onload = function () {
+        (window.google && google.accounts && google.accounts.oauth2)
+          ? resolve() : reject(new Error('ספריית ההתחברות של גוגל נטענה חלקית'));
+      };
+      s.onerror = function () { reject(new Error('לא הצלחתי לטעון את ספריית ההתחברות של גוגל (אין אינטרנט?)')); };
+      document.head.appendChild(s);
+    });
+  }
+
+  async function driveAuth() {
+    var cid = (ls('driveClientId') || '').trim();
+    if (!cid) throw new Error('חסר מזהה OAuth בהגדרות');
+    await loadGis();
+    return await new Promise(function (resolve, reject) {
+      var done = false;
+      var client = google.accounts.oauth2.initTokenClient({
+        client_id: cid,
+        scope: 'https://www.googleapis.com/auth/drive.file',
+        callback: function (resp) {
+          if (done) return;
+          done = true;
+          if (resp && resp.access_token) resolve(resp.access_token);
+          else reject(new Error('לא התקבל אישור מגוגל'));
+        },
+        error_callback: function (err) {
+          if (done) return;
+          done = true;
+          var t = (err && (err.type || err.message)) || '';
+          reject(new Error(t === 'popup_closed' ? 'סגרת את חלון ההתחברות'
+            : t === 'popup_failed_to_open' ? 'הדפדפן חסם את חלון ההתחברות'
+            : 'ההתחברות נכשלה' + (t ? ' (' + t + ')' : '')));
+        }
+      });
+      client.requestAccessToken();
+    });
+  }
+
+  var driveToken = null;
+
+  /* Every Drive call goes through here so a token that expires mid-upload
+     (they last an hour; a 2 GB folder can take longer) refreshes itself. */
+  async function driveFetch(url, opt) {
+    opt = opt || {};
+    opt.headers = Object.assign({}, opt.headers, { Authorization: 'Bearer ' + driveToken });
+    var res = await fetch(url, opt);
+    if (res.status === 401) {
+      driveToken = await driveAuth();
+      opt.headers.Authorization = 'Bearer ' + driveToken;
+      res = await fetch(url, opt);
+    }
+    return res;
+  }
+
+  /* Mobile networks drop connections. One "Failed to fetch" should cost a second,
+     not a photo — so every Drive operation gets four attempts with backoff. */
+  async function retry(fn) {
+    var lastErr;
+    for (var i = 0; i < 4; i++) {
+      if (state.stop) throw new Error('בוטל');
+      try { return await fn(); }
+      catch (e) {
+        lastErr = e;
+        if (i < 3) await sleep(700 * Math.pow(2, i));
+      }
+    }
+    throw lastErr;
+  }
+
+  async function driveMkdir(name, parent) {
+    return await retry(async function () {
+      var body = { name: name, mimeType: 'application/vnd.google-apps.folder' };
+      if (parent) body.parents = [parent];
+      var r = await driveFetch('https://www.googleapis.com/drive/v3/files?fields=id,webViewLink', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(body)
+      });
+      if (!r.ok) throw new Error('דרייב: יצירת תיקייה נכשלה (' + r.status + ')');
+      return await r.json();
+    });
+  }
+
+  /* Resumable upload: photos routinely exceed the 5 MB multipart ceiling. */
+  async function driveUpload(file, name, parent) {
+    return await retry(async function () {
+      var init = await driveFetch('https://www.googleapis.com/upload/drive/v3/files?uploadType=resumable', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json; charset=UTF-8' },
+        body: JSON.stringify({ name: name, parents: [parent] })
+      });
+      if (!init.ok) throw new Error('דרייב: פתיחת העלאה נכשלה (' + init.status + ')');
+      var loc = init.headers.get('Location');
+      if (!loc) throw new Error('דרייב: חסרה כתובת העלאה');
+      var put = await fetch(loc, {
+        method: 'PUT',
+        headers: { 'Content-Type': file.type || 'application/octet-stream' },
+        body: file
+      });
+      if (!put.ok) throw new Error('דרייב: ההעלאה נכשלה (' + put.status + ')');
+    });
+  }
+
+  /* drive.file lets the app manage sharing on folders it created itself. */
+  async function driveShare(folderId) {
+    var r = await driveFetch('https://www.googleapis.com/drive/v3/files/' +
+      encodeURIComponent(folderId) + '/permissions', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ role: 'reader', type: 'anyone' })
+    });
+    if (!r.ok) throw new Error('שיתוף נכשל (' + r.status + ')');
+  }
+
+  async function runDrive(plans) {
+    driveToken = await driveAuth();
+    var rootName = C.sanitize(state.rootName) + OUT_MARK;
+    var res = { moved: 0, copied: 0, renamed: [], failed: [], stopped: false, dest: 'drive' };
+    if (state.driveRootId && state.driveRootName === rootName) {
+      res.driveRootId = state.driveRootId;
+      res.driveLink = state.driveLink;
+    } else {
+      var root = await driveMkdir(rootName, null);
+      state.driveRootId = res.driveRootId = root.id;
+      state.driveRootName = rootName;
+      state.driveLink = res.driveLink = root.webViewLink ||
+        ('https://drive.google.com/drive/folders/' + root.id);
+      state.driveDirs = {};
+    }
+    res.driveLink = state.driveLink;
+    res.driveRootId = state.driveRootId;
+    var dirs = state.driveDirs || (state.driveDirs = {});
+    var done = 0;
+    for (var i = 0; i < plans.length; i++) {
+      if (state.stop) { res.stopped = true; break; }
+      var p = plans[i];
+      try {
+        var parent = res.driveRootId, key = '';
+        for (var j = 0; j < p.parts.length; j++) {
+          key = key ? key + '/' + p.parts[j] : p.parts[j];
+          if (!dirs[key]) dirs[key] = (await driveMkdir(p.parts[j], parent)).id;
+          parent = dirs[key];
+        }
+        var f = await p.item.handle.getFile();
+        await driveUpload(f, p.item.name, parent);
+        res.copied++;
+      } catch (e) {
+        res.failed.push({ name: p.item.name, error: String((e && e.message) || e), plan: p });
+      }
+      setProgress(++done, plans.length, p.item.name);
+    }
+    return res;
+  }
+
+  /* The everywhere path: no writable folder, no account, no upload. Just an archive
+     with the folder structure inside it, which any phone or computer can open. */
+  async function runZip(plans) {
+    var Z = self.ZipLite;
+    var zw = new Z.ZipWriter();
+    var res = { moved: 0, copied: 0, renamed: [], failed: [], stopped: false, dest: 'zip' };
+    var total = 0, done = 0;
+    for (var i = 0; i < plans.length; i++) {
+      if (state.stop) { res.stopped = true; break; }
+      var p = plans[i];
+      try {
+        var f = await p.item.handle.getFile();
+        if (total + f.size > Z.ZipWriter.LIMIT)
+          throw new Error('הארכיון היה חורג מ‑4 ג׳יגה — בחר פחות קבצים או פצל לשתי הרצות');
+        var bytes = new Uint8Array(await f.arrayBuffer());
+        total += bytes.length;
+        var path = zw.safePath(p.parts, p.item.name);
+        var leaf = path.split('/').pop();
+        if (leaf !== p.item.name) res.renamed.push({ from: p.item.name, to: leaf });
+        zw.add(path, bytes, p.item.meta.date);
+        res.copied++;
+      } catch (e) {
+        res.failed.push({ name: p.item.name, error: String((e && e.message) || e), plan: p });
+      }
+      setProgress(++done, plans.length, p.item.name);
+    }
+    res.zipBlob = zw.finish();
+    res.zipName = (C.sanitize(state.rootName) || 'תמונות') + OUT_MARK + '.zip';
+    res.bytes = total;
+    return res;
+  }
+
+  // ---------- 5. done ----------
+  function renderDone(res) {
+    var n = res.moved + res.copied;
+    $('#done-h').textContent = res.stopped ? 'נעצר באמצע' : ((res.failed.length && !n) ? 'לא הצלחתי' : 'הכל מסודר');
+    var dest = state.opts.destination;
+    var outName = C.sanitize(state.rootName) + OUT_MARK;
+    var where = dest === 'drive' ? 'בגוגל דרייב, בתיקייה «' + esc(outName) + '»'
+      : dest === 'zip' ? 'בתוך קובץ ה‑ZIP'
+        : dest === 'newfolder' ? 'בתיקייה «' + esc(outName) + '» בתוך התיקייה שבחרת'
+          : 'בתוך «' + esc(state.rootName) + '»';
+    var verb = dest === 'inplace' ? 'הועברו' : 'הועתקו';
+    var h = '<b>' + n + '</b> קבצים ' + verb + ' ל‑<b>' + state.plan.folders.length + '</b> תיקיות, ' + where + '.';
+    if (dest === 'newfolder' || dest === 'inplace')
+      h += '<br><span style="color:#8b95a4;font-size:14px">נשמר גם «סידור-יומן.txt» עם רשימת כל מה שזז.</span>';
+    if (res.bytes)
+      h += '<br><span style="color:#8b95a4;font-size:14px">' + humanSize(res.bytes) + '.</span>';
+    if (res.renamed.length) {
+      h += '<br><br><b>' + res.renamed.length + '</b> קבצים קיבלו סיומת מספר כי כבר היה קובץ באותו שם:<ul>' +
+        res.renamed.slice(0, 8).map(function (r) { return '<li>' + esc(r.from) + ' ← ' + esc(r.to) + '</li>'; }).join('') + '</ul>';
+    }
+    if (res.failed.length) {
+      h += '<br><br><b>' + res.failed.length + '</b> נכשלו:<ul>' +
+        res.failed.slice(0, 8).map(function (f) { return '<li>' + esc(f.name) + ' — ' + esc(f.error) + '</li>'; }).join('') + '</ul>';
+      if (res.failed.length > 8) h += '<span style="color:#8b95a4;font-size:14px">…ועוד ' + (res.failed.length - 8) + '</span>';
+    }
+    $('#summary').innerHTML = h;
+    renderActions(res);
+  }
+
+  function renderActions(res) {
+    var box = $('#done-actions');
+    box.innerHTML = '';
+
+    if (res.dest === 'drive' && res.driveLink) {
+      var d = document.createElement('div');
+      d.className = 'linkbox';
+      d.innerHTML = '<div class="lb">התיקייה בגוגל דרייב</div>' +
+        '<a href="' + esc(res.driveLink) + '" target="_blank" rel="noopener noreferrer">' + esc(res.driveLink) + '</a>' +
+        '<div class="actrow">' +
+        '<button class="act go" data-a="open">פתח בדרייב</button>' +
+        '<button class="act" data-a="copy">העתק קישור</button>' +
+        '<button class="act" data-a="share">שתף לכל מי שיש לו הקישור</button>' +
+        (navigator.share ? '<button class="act" data-a="send">שלח…</button>' : '') +
+        '</div>';
+      box.appendChild(d);
+      d.querySelector('[data-a="open"]').onclick = function () { window.open(res.driveLink, '_blank', 'noopener'); };
+      d.querySelector('[data-a="copy"]').onclick = function () { copyText(this, res.driveLink); };
+      d.querySelector('[data-a="share"]').onclick = async function () {
+        var b = this; b.textContent = 'משתף…'; b.disabled = true;
+        try { await driveShare(res.driveRootId); b.textContent = 'משותף — כל מי שיש לו הקישור יכול לצפות'; }
+        catch (e) { b.textContent = 'השיתוף נכשל'; b.disabled = false; }
+      };
+      var sendBtn = d.querySelector('[data-a="send"]');
+      if (sendBtn) sendBtn.onclick = function () {
+        navigator.share({ title: 'תמונות מסודרות', url: res.driveLink }).catch(function () {});
+      };
+    }
+
+    if (res.dest === 'zip' && res.zipBlob) {
+      var z = document.createElement('div');
+      z.className = 'linkbox';
+      z.innerHTML = '<div class="lb">' + esc(res.zipName) + '</div>' +
+        '<div class="actrow">' +
+        '<button class="act go" data-a="dl">הורד למכשיר</button>' +
+        (navigator.canShare ? '<button class="act" data-a="sharefile">שלח לאפליקציה אחרת</button>' : '') +
+        '</div>';
+      box.appendChild(z);
+      z.querySelector('[data-a="dl"]').onclick = function () {
+        var url = URL.createObjectURL(res.zipBlob);
+        var a = document.createElement('a');
+        a.href = url; a.download = res.zipName;
+        document.body.appendChild(a); a.click(); a.remove();
+        setTimeout(function () { URL.revokeObjectURL(url); }, 60000);
+      };
+      var sf = z.querySelector('[data-a="sharefile"]');
+      if (sf) sf.onclick = async function () {
+        try {
+          var file = new File([res.zipBlob], res.zipName, { type: 'application/zip' });
+          if (navigator.canShare({ files: [file] })) await navigator.share({ files: [file] });
+          else this.textContent = 'המכשיר לא תומך בשליחת קבצים';
+        } catch (e) {}
+      };
+    }
+
+    /* Anything that failed keeps its plan entry, so a retry re-runs exactly those. */
+    if (res.failed.length && (res.dest === 'drive' || res.dest === 'zip')) {
+      var again = res.failed.map(function (f) { return f.plan; }).filter(Boolean);
+      if (again.length) {
+        var r = document.createElement('button');
+        r.className = 'act go wide';
+        r.textContent = 'נסה שוב את ' + again.length + ' שנכשלו';
+        r.onclick = function () {
+          state.retryPlans = again;
+          $('#run').onclick();
+        };
+        box.appendChild(r);
+      }
+    }
+  }
+
+  function humanSize(b) {
+    if (b >= 1073741824) return (b / 1073741824).toFixed(1) + ' ג׳יגה‑בייט';
+    if (b >= 1048576) return (b / 1048576).toFixed(b >= 10485760 ? 0 : 1) + ' מגה‑בייט';
+    return Math.max(1, Math.round(b / 1024)) + ' קילו‑בייט';
+  }
+
+  async function copyText(btn, txt) {
+    var old = btn.textContent;
+    try { await navigator.clipboard.writeText(txt); btn.textContent = 'הועתק'; }
+    catch (e) { btn.textContent = 'סמן ידנית'; }
+    setTimeout(function () { btn.textContent = old; }, 1800);
+  }
+
+  $('#again').onclick = function () {
+    state.items = []; state.plan = null; state.root = null; state.geoFailed = false;
+    state.retryPlans = null; state.driveRootId = null; state.driveDirs = null;
+    $('#done-actions').innerHTML = '';
+    show('s-welcome');
+  };
+
+  /* Drawn rather than embedded: a base64 PNG would add ~15 KB to every copy of this
+     file, and the icon is only a few rounded rectangles. */
+  function makeIcon(size) {
+    var c = document.createElement('canvas');
+    c.width = c.height = size;
+    var g = c.getContext('2d'), k = size / 512;
+    function rr(x, y, w, h, r, fill) {
+      g.beginPath();
+      g.moveTo(x + r, y);
+      g.arcTo(x + w, y, x + w, y + h, r);
+      g.arcTo(x + w, y + h, x, y + h, r);
+      g.arcTo(x, y + h, x, y, r);
+      g.arcTo(x, y, x + w, y, r);
+      g.closePath();
+      g.fillStyle = fill;
+      g.fill();
+    }
+    rr(0, 0, size, size, 112 * k, '#0e1116');
+    rr(96 * k, 140 * k, 140 * k, 60 * k, 18 * k, '#3b82f6');
+    rr(96 * k, 168 * k, 320 * k, 224 * k, 26 * k, '#3b82f6');
+    [[140, 206, '#dbeafe'], [196, 190, '#93c5fd'], [252, 174, '#ffffff']].forEach(function (c2) {
+      rr(c2[0] * k, c2[1] * k, 124 * k, 150 * k, 14 * k, c2[2]);
+      rr((c2[0] + 14) * k, (c2[1] + 16) * k, 96 * k, 80 * k, 8 * k, 'rgba(59,130,246,.35)');
+    });
+    return c.toDataURL('image/png');
+  }
+
+  // ---------- installable on the home screen, on every platform ----------
+  (function pwa() {
+    /* A shipped manifest means this is the packaged multi-file build, which also
+       carries sw.js. The single-file build has neither, so don't go fetching a
+       service worker that isn't there and litter the console with a 404. */
+    var packaged = !!document.querySelector('link[rel="manifest"]');
+    if (packaged && 'serviceWorker' in navigator && window.isSecureContext) {
+      navigator.serviceWorker.register('sw.js').catch(function () {});
+    }
+    try {
+      if (packaged) throw 0;
+      var icon512 = makeIcon(512), icon192 = makeIcon(192);
+      ['apple-touch-icon', 'icon'].forEach(function (rel) {
+        var l = document.createElement('link');
+        l.rel = rel; l.href = icon192;
+        document.head.appendChild(l);
+      });
+      var manifest = {
+        name: 'סידור תיקיות', short_name: 'סידור תיקיות',
+        start_url: location.pathname, scope: location.pathname,
+        display: 'standalone', dir: 'rtl', lang: 'he',
+        background_color: '#0e1116', theme_color: '#0e1116',
+        icons: [{ src: icon192, sizes: '192x192', type: 'image/png', purpose: 'any' },
+                { src: icon512, sizes: '512x512', type: 'image/png', purpose: 'any maskable' }]
+      };
+      var link = document.createElement('link');
+      link.rel = 'manifest';
+      link.href = URL.createObjectURL(new Blob([JSON.stringify(manifest)], { type: 'application/manifest+json' }));
+      document.head.appendChild(link);
+    } catch (e) {}
+
+    var standalone = window.matchMedia('(display-mode: standalone)').matches ||
+      window.navigator.standalone === true;
+    if (standalone) return;
+
+    var prompted = null;
+    window.addEventListener('beforeinstallprompt', function (e) {
+      e.preventDefault();
+      prompted = e;
+      $('#install-note').innerHTML = '<button class="ghost wide" id="install">התקן על המכשיר</button>';
+      $('#install').onclick = async function () {
+        $('#install-note').innerHTML = '';
+        prompted.prompt();
+        await prompted.userChoice;
+        prompted = null;
+      };
+    });
+
+    /* iOS never fires beforeinstallprompt; there the user has to do it by hand. */
+    var iOS = /iPad|iPhone|iPod/.test(navigator.userAgent) ||
+      (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+    if (iOS) {
+      $('#install-note').innerHTML =
+        '<p class="fine">כדי לשמור את זה כאפליקציה: כפתור השיתוף למטה ← «הוסף למסך הבית».</p>';
+    }
+  })();
+
+  syncOptionUI();
+  self.__t = { state: state, scan: scan, readMeta: readMeta, show: show };  // test hook
+})();
+</script>
+</body>
+</html>
+
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="סידור תיקיות">
+<link rel="manifest" href="manifest.json">
+<link rel="apple-touch-icon" href="icon-192.png">
+<link rel="icon" href="icon-192.png">
+</head>
+<body>
+
+<section id="app">
+  <header class="bar">
+    <div class="brand">סידור תיקיות</div>
+    <button id="gear" class="ghost" aria-label="הגדרות">הגדרות</button>
+  </header>
+
+  <!-- ========== 1. פתיחה ========== -->
+  <div class="screen on" id="s-welcome">
+    <div class="hero">
+      <div class="mark">📁</div>
+      <h1>מסדר תיקייה לפי תאריך,<br>מקום, פרויקט או שם</h1>
+      <p class="sub">תמונות, סרטונים, הקלטות ומסמכים. בוחרים תיקייה, בוחרים לפי מה לחלק, והקבצים נכנסים לתיקיות משנה. <b>שמות הקבצים לא משתנים.</b></p>
+    </div>
+    <button id="pick" class="primary big">בחר תיקייה</button>
+    <button id="pick-files" class="ghost wide">או לבחור קבצים ידנית</button>
+    <input type="file" id="fi-dir" multiple hidden>
+    <input type="file" id="fi-any" multiple hidden>
+    <p class="fine" id="support-note"></p>
+    <div id="install-note"></div>
+  </div>
+
+  <!-- ========== 2. שאלות ========== -->
+  <div class="screen" id="s-options">
+    <div class="found" id="found"></div>
+
+    <div class="group">
+      <div class="glabel">לחלק לפי</div>
+      <div class="chips" id="g-l1">
+        <button class="chip sel" data-v="date">תאריך</button>
+        <button class="chip" data-v="place">מיקום</button>
+        <button class="chip" data-v="project">תיקיית מקור</button>
+        <button class="chip" data-v="keyword">מילה או שם</button>
+        <button class="chip" data-v="type">סוג קובץ</button>
+      </div>
+    </div>
+
+    <div class="group">
+      <div class="glabel">ובתוך זה, לחלק שוב לפי</div>
+      <div class="chips" id="g-l2">
+        <button class="chip sel" data-v="">בלי</button>
+        <button class="chip" data-v="date">תאריך</button>
+        <button class="chip" data-v="place">מיקום</button>
+        <button class="chip" data-v="project">תיקיית מקור</button>
+        <button class="chip" data-v="keyword">מילה או שם</button>
+        <button class="chip" data-v="type">סוג קובץ</button>
+      </div>
+      <div class="hint" id="mode-hint"></div>
+    </div>
+
+    <div class="group" id="grp-keyword">
+      <div class="glabel">מילות מפתח או שמות</div>
+      <input id="terms" type="text" placeholder="דוד לוי, גשר הירקון, חשמל" spellcheck="false">
+      <div class="hint">מפרידים בפסיק. הסדר קובע: קובץ שמתאים לכמה ייכנס לראשון שברשימה.</div>
+      <label class="tog"><input type="checkbox" id="opt-deep" checked> לחפש גם <b>בתוך</b> הקבצים — PDF, Word, Excel, PowerPoint, טקסט</label>
+    </div>
+
+    <div class="group">
+      <div class="glabel">אילו קבצים לכלול</div>
+      <div class="kinds" id="g-kinds">
+        <label class="tog"><input type="checkbox" data-k="image" checked> תמונות</label>
+        <label class="tog"><input type="checkbox" data-k="video" checked> סרטונים</label>
+        <label class="tog"><input type="checkbox" data-k="audio" checked> הקלטות</label>
+        <label class="tog"><input type="checkbox" data-k="doc" checked> מסמכים</label>
+        <label class="tog"><input type="checkbox" data-k="other" checked> שאר הקבצים</label>
+      </div>
+      <div class="hint" id="kinds-hint"></div>
+    </div>
+
+    <div class="group" id="grp-date">
+      <div class="glabel">רמת התאריך</div>
+      <div class="chips" id="g-dateLevel">
+        <button class="chip" data-v="year">שנה</button>
+        <button class="chip" data-v="month">חודש</button>
+        <button class="chip sel" data-v="day">יום</button>
       </div>
     </div>
 
